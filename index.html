@@ -5,31 +5,57 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Smart Citizen Portal</title>
 
+  <!-- FAVICON -->
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
 
-  <!-- Supabase JS (v2) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- LEAFLET -->
+  <!-- LEAFLET (карта) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     :root{
-      --bg:#F2F4F7; --card:#ffffff; --text:#102A43; --muted:#52606D; --line:#E4E7EB;
-      --nav:#102A43; --nav2:#243B53; --brand:#0B3C5D; --accent:#1E88E5;
-      --shadow: 0 8px 24px rgba(16,42,67,0.08); --radius: 14px;
-      --c-roads:#ff3b30; --c-light:#ffcc00; --c-trash:#34c759; --c-water:#0a84ff; --c-other:#8e8e93;
+      --bg:#F2F4F7;
+      --card:#ffffff;
+      --text:#102A43;
+      --muted:#52606D;
+      --line:#E4E7EB;
+      --nav:#102A43;
+      --nav2:#243B53;
+      --brand:#0B3C5D;
+      --accent:#1E88E5;
+      --shadow: 0 8px 24px rgba(16,42,67,0.08);
+      --radius: 14px;
+
+      /* категории -> цвета */
+      --c-roads:#ff3b30;
+      --c-light:#ffcc00;
+      --c-trash:#34c759;
+      --c-water:#0a84ff;
+      --c-other:#8e8e93;
     }
     [data-theme="dark"]{
-      --bg:#0B1020; --card:#0F172A; --text:#E6EEF8; --muted:#A7B4C6; --line:#20304A;
-      --nav:#0E1830; --nav2:#142240; --brand:#0A1F3A; --accent:#4DA3FF;
+      --bg:#0B1020;
+      --card:#0F172A;
+      --text:#E6EEF8;
+      --muted:#A7B4C6;
+      --line:#20304A;
+      --nav:#0E1830;
+      --nav2:#142240;
+      --brand:#0A1F3A;
+      --accent:#4DA3FF;
       --shadow: 0 10px 28px rgba(0,0,0,0.35);
     }
-    *{ box-sizing:border-box; }
-    body{ margin:0; font-family:-apple-system,system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); }
 
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: -apple-system, system-ui, Segoe UI, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ПЛАВНОСТЬ / АНИМАЦИИ */
     .navitem, .btn, .btn2, .mini-btn, input, textarea, select, .card, .pill, .badge, .theme-toggle{
       transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease;
       will-change: transform;
@@ -38,132 +64,406 @@
     .btn:active, .btn2:active, .mini-btn:active{ transform: translateY(0px) scale(.99); }
 
     .tab-anim{ animation: tabIn .22s ease both; }
-    @keyframes tabIn{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform: translateY(0);} }
-    @media (prefers-reduced-motion: reduce){ .tab-anim{ animation:none; } .navitem, .btn, .btn2, .mini-btn, input, textarea, select, .card, .pill, .badge, .theme-toggle{ transition:none; } }
+    @keyframes tabIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .tab-anim{ animation:none; }
+      .navitem, .btn, .btn2, .mini-btn, input, textarea, select, .card, .pill, .badge, .theme-toggle{ transition:none; }
+    }
 
     .topbar{
-      height:64px; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:space-between;
-      padding:0 18px; position:sticky; top:0; z-index:50;
+      height:64px;
+      background: var(--brand);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 18px;
+      position:sticky;
+      top:0;
+      z-index:50;
     }
-    .brand{ display:flex; gap:12px; align-items:center; font-weight:800; letter-spacing:.2px; }
-    .logo{ width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.14); display:grid; place-items:center; font-weight:900; letter-spacing:.5px; }
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .logo{
+      width:36px;height:36px;border-radius:10px;
+      background: rgba(255,255,255,0.14);
+      display:grid;place-items:center;
+      font-weight:900;
+      letter-spacing:.5px;
+    }
     .top-right{ display:flex; align-items:center; gap:10px; font-size:13px; opacity:.95; }
-    .chip{ background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); padding:6px 10px; border-radius:999px; white-space:nowrap; }
+    .chip{
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.22);
+      padding:6px 10px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
 
-    .layout{ display:grid; grid-template-columns:260px 1fr; min-height:calc(100vh - 64px); }
+    .layout{ display:grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 64px); }
 
     .sidebar{
-      background:var(--nav); color:#D9E2EC; padding:16px 12px; position:sticky; top:64px;
-      height:calc(100vh - 64px); overflow:auto;
+      background: var(--nav);
+      color:#D9E2EC;
+      padding:16px 12px;
+      position:sticky;
+      top:64px;
+      height: calc(100vh - 64px);
+      overflow:auto;
     }
-    .navtitle{ font-size:12px; opacity:.85; padding:8px 10px; text-transform:uppercase; letter-spacing:.08em; }
-    .navitem{ display:flex; gap:10px; align-items:center; padding:12px; border-radius:12px; cursor:pointer; user-select:none; margin:4px 0; }
-    .navitem:hover{ background:var(--nav2); }
-    .navitem.active{ background:rgba(30,136,229,0.18); border:1px solid rgba(30,136,229,0.35); }
+    .navtitle{
+      font-size:12px; opacity:.85; padding:8px 10px;
+      text-transform: uppercase; letter-spacing:.08em;
+    }
+    .navitem{
+      display:flex; gap:10px; align-items:center;
+      padding:12px 12px; border-radius:12px;
+      cursor:pointer; user-select:none;
+      margin:4px 0;
+    }
+    .navitem:hover{ background: var(--nav2); }
+    .navitem.active{ background: rgba(30,136,229,0.18); border: 1px solid rgba(30,136,229,0.35); }
 
-    .navicon{ width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; opacity:.92; flex:0 0 22px; }
-    .navicon svg{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    /* Монохромные иконки (как ChatGPT — чистые, без цвета) */
+    .navicon{
+      width:22px; height:22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      opacity:.92;
+      flex: 0 0 22px;
+    }
+    .navicon svg{
+      width:20px; height:20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
     .sidebar-actions{ padding:12px; }
-    /* Скрыто до входа */
-    #logoutWrap{ display:none; }
+    .sidebar-bottom{ margin-top:8px; padding:12px; border-top: 1px solid rgba(217,226,236,0.12); }
 
-    .sidebar-bottom{ margin-top:8px; padding:12px; border-top:1px solid rgba(217,226,236,0.12); }
     .theme-toggle{
-      width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:10px 12px; border-radius:14px; cursor:pointer; user-select:none;
-      border:1px solid rgba(217,226,236,0.14); background:rgba(255,255,255,0.06); color:#D9E2EC;
+      width:100%;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px; border-radius:14px;
+      cursor:pointer; user-select:none;
+      border:1px solid rgba(217,226,236,0.14);
+      background: rgba(255,255,255,0.06);
+      color:#D9E2EC;
     }
     .theme-icons{ display:flex; gap:8px; font-size:18px; align-items:center; }
     .theme-icons span{ opacity:.55; }
-    .theme-icons .on{ opacity:1; transform:scale(1.05); }
+    .theme-icons .on{ opacity:1; transform: scale(1.05); }
 
     .main{ padding:18px; }
-    .grid{ display:grid; grid-template-columns:1.2fr 0.8fr; gap:16px; }
-    @media (max-width:980px){
-      .layout{ grid-template-columns:1fr; }
+    .grid{ display:grid; grid-template-columns: 1.2fr 0.8fr; gap:16px; }
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
       .sidebar{ position:relative; top:0; height:auto; }
-      .grid{ grid-template-columns:1fr; }
+      .grid{ grid-template-columns: 1fr; }
     }
 
-    .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:16px; }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:16px;
+      margin-bottom:16px;
+    }
+
     h2{ margin:0 0 10px; font-size:18px; }
-    .muted{ color:var(--muted); }
+    .muted{ color: var(--muted); }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .spacer{ height:10px; }
 
-    label{ display:block; margin:10px 0 6px; font-size:13px; color:var(--muted); font-weight:600; }
-    input, textarea, select{
-      width:100%; padding:12px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--text); outline:none;
+    label{
+      display:block; margin:10px 0 6px;
+      font-size:13px; color: var(--muted); font-weight:600;
     }
-    [data-theme="dark"] input,[data-theme="dark"] textarea,[data-theme="dark"] select{ background:#0B1224; }
+    input, textarea, select{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border: 1px solid var(--line);
+      background:#fff;
+      color: var(--text);
+      outline:none;
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] textarea,
+    [data-theme="dark"] select{ background:#0B1224; }
     textarea{ min-height:110px; resize:vertical; }
 
-    .btn{ padding:12px 14px; border:0; border-radius:12px; cursor:pointer; font-weight:800; background:var(--accent); color:#fff; box-shadow:0 10px 20px rgba(30,136,229,.18); }
-    .btn2{ padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:800; background:transparent; color:var(--text); border:1px solid var(--line); }
-    .btn-danger{ width:100%; background:transparent; border:1px solid #ffccd5; color:#a61b1b; font-weight:800; border-radius:12px; padding:12px 14px; cursor:pointer; }
+    .btn{
+      padding:12px 14px;
+      border:0;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      background: var(--accent);
+      color:#fff;
+      box-shadow: 0 10px 20px rgba(30,136,229,.18);
+    }
+    .btn2{
+      padding:12px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      background:transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .btn-danger{
+      width:100%;
+      background:transparent;
+      border:1px solid #ffccd5;
+      color:#a61b1b;
+      font-weight:800;
+      border-radius:12px;
+      padding:12px 14px;
+      cursor:pointer;
+    }
     [data-theme="dark"] .btn-danger{ border-color:#5a1b1b; color:#ffb4b4; }
 
-    .pill{ display:inline-flex; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:transparent; font-size:12px; color:var(--muted); white-space:nowrap; }
+    .pill{
+      display:inline-flex;
+      padding:6px 10px;
+      border-radius:999px;
+      border: 1px solid var(--line);
+      background:transparent;
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
 
-    .kpi{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
-    .kpi .box{ border:1px solid var(--line); border-radius:14px; padding:12px; background:transparent; }
+    .kpi{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+    }
+    .kpi .box{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background:transparent;
+    }
     .kpi .num{ font-size:20px; font-weight:900; }
-    .kpi .lab{ font-size:12px; color:var(--muted); margin-top:4px; }
+    .kpi .lab{ font-size:12px; color: var(--muted); margin-top:4px; }
 
-    .table-wrap{ border:1px solid var(--line); border-radius:14px; overflow:auto; background:transparent; }
-    table{ width:100%; border-collapse:collapse; min-width:1020px; }
-    th, td{ padding:10px; border-bottom:1px solid var(--line); text-align:left; font-size:13px; vertical-align:top; white-space:nowrap; }
+    .table-wrap{
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:auto;
+      background:transparent;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width: 1020px;
+    }
+    th, td{
+      padding:10px;
+      border-bottom:1px solid var(--line);
+      text-align:left;
+      font-size:13px;
+      vertical-align:top;
+      white-space:nowrap;
+    }
     td.wrap{ white-space:normal; }
     th{
-      position:sticky; top:0; background:rgba(247,249,251,0.92); backdrop-filter: blur(6px);
-      font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; z-index:5;
+      position:sticky;
+      top:0;
+      background:rgba(247,249,251,0.92);
+      backdrop-filter: blur(6px);
+      font-size:12px;
+      color: var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      z-index:5;
     }
     [data-theme="dark"] th{ background: rgba(255,255,255,0.06); }
 
-    .badge{ display:inline-flex; padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px; border:1px solid var(--line); background:transparent; color:var(--muted); white-space:nowrap; }
+    .badge{
+      display:inline-flex;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      border: 1px solid var(--line);
+      background:transparent;
+      color: var(--muted);
+      white-space:nowrap;
+    }
     .b-new{ border-color:#2b5fa2; background:rgba(30,136,229,0.16); color:#9fd0ff; }
     .b-proc{ border-color:#a86a1a; background:rgba(239,108,0,0.12); color:#ffd2a6; }
     .b-dept{ border-color:#334a6b; background:rgba(167,180,198,0.10); color:#cbd6e6; }
     .b-done{ border-color:#1c6b3a; background:rgba(46,125,50,0.12); color:#b7f0c0; }
 
-    .hint{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.35; }
+    .hint{ font-size:12px; color: var(--muted); margin-top:8px; line-height:1.35; }
     .hide{ display:none !important; }
 
-    .mini-btn{ padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:transparent; cursor:pointer; font-weight:800; color:var(--text); }
-    .status-select{ border-radius:999px; padding:8px 10px; border:1px solid var(--line); font-weight:900; font-size:12px; background:transparent; width:auto; }
+    .mini-btn{
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background:transparent;
+      cursor:pointer;
+      font-weight:800;
+      color: var(--text);
+    }
 
-    .panel{ margin-top:10px; border:1px dashed var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,0.04); }
+    .status-select{
+      border-radius:999px;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      font-weight:900;
+      font-size:12px;
+      background:transparent;
+      width:auto;
+    }
+
+    .panel{
+      margin-top:10px;
+      border:1px dashed var(--line);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(255,255,255,0.04);
+    }
     .panel textarea{ min-height:70px; }
 
-    .footer{ margin-top:16px; padding:14px 16px; border:1px solid var(--line); background:transparent; border-radius:14px; color:var(--muted); font-size:12px; line-height:1.45; }
-    .footer strong{ color:var(--text); }
+    .footer{
+      margin-top:16px;
+      padding:14px 16px;
+      border:1px solid var(--line);
+      background:transparent;
+      border-radius:14px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+    .footer strong{ color: var(--text); }
     .footer .links{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
-    .footer a{ color:var(--accent); text-decoration:none; font-weight:700; }
+    .footer a{ color: var(--accent); text-decoration:none; font-weight:700; }
     .footer a:hover{ text-decoration:underline; }
 
-    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:999; padding:16px; animation: fadeIn .18s ease both; }
+    /* ===== МОДАЛКА КАРТЫ ===== */
+    .modal{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:999;
+      padding:16px;
+      animation: fadeIn .18s ease both;
+    }
     .modal.on{ display:flex; }
     @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
-    .modal-card{ width:min(980px, 100%); background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); overflow:hidden; transform:translateY(6px); animation: popIn .2s ease both; }
+
+    .modal-card{
+      width:min(980px, 100%);
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      transform: translateY(6px);
+      animation: popIn .2s ease both;
+    }
     @keyframes popIn{ to{ transform: translateY(0); } }
-    .modal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line); }
+
+    .modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+    }
     .modal-title{ font-weight:900; }
     .modal-body{ padding:12px; }
+    .map{
+      width:100%;
+      height: 460px;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--line);
+    }
+    .mapbar{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      margin-top:10px;
+      justify-content:space-between;
+    }
+    .maphint{
+      font-size:12px; color:var(--muted);
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    }
+    .coord-pill{
+      display:inline-flex;
+      padding:6px 10px;
+      border-radius:999px;
+      border: 1px solid var(--line);
+      font-size:12px;
+      color: var(--muted);
+      background: rgba(127,127,127,0.06);
+    }
 
-    .map{ width:100%; height:460px; border-radius:14px; overflow:hidden; border:1px solid var(--line); }
-    .mapbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px; justify-content:space-between; }
-    .maphint{ font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .coord-pill{ display:inline-flex; padding:6px 10px; border-radius:999px; border:1px solid var(--line); font-size:12px; color:var(--muted); background:rgba(127,127,127,0.06); }
-
-    .dot-marker{ width:20px; height:20px; border-radius:999px; background:#fff; border:2px solid rgba(16,42,67,0.14); box-shadow:0 10px 22px rgba(0,0,0,.18); display:grid; place-items:center; }
-    .dot-marker .dot{ width:10px; height:10px; border-radius:999px; background:var(--c-other); }
-    .leaflet-tooltip.mytip{ border:1px solid rgba(0,0,0,.08); border-radius:10px; box-shadow:0 10px 22px rgba(0,0,0,.14); padding:8px 10px; font-weight:800; }
+    /* ===== КРАСИВЫЕ МАРКЕРЫ ===== */
+    .dot-marker{
+      width:20px; height:20px;
+      border-radius:999px;
+      background:#fff;
+      border:2px solid rgba(16,42,67,0.14);
+      box-shadow: 0 10px 22px rgba(0,0,0,.18);
+      display:grid;
+      place-items:center;
+    }
+    .dot-marker .dot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background: var(--c-other);
+    }
+    .leaflet-tooltip.mytip{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:10px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.14);
+      padding:8px 10px;
+      font-weight:800;
+    }
     [data-theme="dark"] .leaflet-tooltip.mytip{ border-color: rgba(255,255,255,.12); }
 
-    .seg{ display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:rgba(127,127,127,0.06); }
-    .seg button{ border:0; padding:8px 12px; cursor:pointer; background:transparent; font-weight:900; color:var(--muted); }
-    .seg button.on{ background:rgba(30,136,229,0.14); color:var(--text); }
+    /* ===== ADMIN: переключатель Таблица/Карта ===== */
+    .seg{
+      display:inline-flex;
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+      background: rgba(127,127,127,0.06);
+    }
+    .seg button{
+      border:0;
+      padding:8px 12px;
+      cursor:pointer;
+      background:transparent;
+      font-weight:900;
+      color: var(--muted);
+    }
+    .seg button.on{
+      background: rgba(30,136,229,0.14);
+      color: var(--text);
+    }
   </style>
 </head>
 
@@ -187,50 +487,72 @@
       <div class="navtitle">Навигация</div>
 
       <div class="navitem active" id="nav-auth" onclick="go('auth')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><path d="M7 14a5 5 0 1 1 3.6-8.5"/><path d="M11 11l10 0"/><path d="M17 11v3"/><path d="M20 11v2"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- key -->
+          <svg viewBox="0 0 24 24"><path d="M7 14a5 5 0 1 1 3.6-8.5"/><path d="M11 11l10 0"/><path d="M17 11v3"/><path d="M20 11v2"/></svg>
+        </div>
         <div>Вход / Регистрация</div>
       </div>
 
       <div class="navitem" id="nav-dashboard" onclick="go('dashboard')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- home -->
+          <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </div>
         <div>Главная</div>
       </div>
 
       <div class="navitem" id="nav-report" onclick="go('report')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><path d="M12 8v8"/><path d="M8 12h8"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- plus circle -->
+          <svg viewBox="0 0 24 24"><path d="M12 8v8"/><path d="M8 12h8"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
+        </div>
         <div>Подать обращение</div>
       </div>
 
       <div class="navitem" id="nav-my" onclick="go('my')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- folder -->
+          <svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </div>
         <div>Мои обращения</div>
       </div>
 
       <div class="navitem" id="nav-track" onclick="go('track')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- search -->
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+        </div>
         <div>Трекинг по номеру</div>
       </div>
 
       <div class="navtitle" style="margin-top:8px;">Для сотрудников</div>
 
       <div class="navitem" id="nav-admin" onclick="go('admin')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-6h6v6"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- building -->
+          <svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-6h6v6"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>
+        </div>
         <div>Реестр обращений</div>
       </div>
 
       <div class="navitem" id="nav-help" onclick="go('help')">
-        <div class="navicon"><svg viewBox="0 0 24 24"><path d="M12 17h.01"/><path d="M9.1 9a3 3 0 1 1 4.9 2.3c-.9.6-1.5 1.1-1.5 2.2v.5"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg></div>
+        <div class="navicon" aria-hidden="true">
+          <!-- help circle -->
+          <svg viewBox="0 0 24 24"><path d="M12 17h.01"/><path d="M9.1 9a3 3 0 1 1 4.9 2.3c-.9.6-1.5 1.1-1.5 2.2v.5"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
+        </div>
         <div>Помощь</div>
       </div>
 
-      <div class="sidebar-actions" id="logoutWrap">
+      <!-- FIX: кнопка выхода показывается только когда есть сессия -->
+      <div class="sidebar-actions hide" id="logoutWrap">
         <button class="btn-danger" onclick="logout()">Выйти из аккаунта</button>
       </div>
 
       <div class="sidebar-bottom">
         <div class="theme-toggle" onclick="toggleTheme()" title="Сменить тему">
           <div style="font-weight:800;">Тема</div>
-          <div class="theme-icons">
+          <div class="theme-icons" aria-hidden="true">
             <span id="icoSun">☀️</span>
             <span id="icoMoon">🌙</span>
           </div>
@@ -241,6 +563,7 @@
     <main class="main">
       <div class="grid">
         <div>
+          <!-- AUTH -->
           <section class="card tab-anim" id="tab-auth">
             <h2>Вход / Регистрация</h2>
             <div class="muted">Выберите роль: <b>Гражданин</b> или <b>Правительство</b>.</div>
@@ -267,6 +590,7 @@
             </div>
           </section>
 
+          <!-- DASH -->
           <section class="card hide" id="tab-dashboard">
             <h2>Главная</h2>
             <div class="muted">Сводка и быстрые действия.</div>
@@ -287,6 +611,7 @@
             </div>
           </section>
 
+          <!-- REPORT -->
           <section class="card hide" id="tab-report">
             <h2>Подать обращение</h2>
             <div class="muted">Опишите проблему и укажите место. Можно выбрать точку <b>на карте</b>.</div>
@@ -304,28 +629,44 @@
               <option value="other">Другое</option>
             </select>
 
+            <!-- ДВЕ КНОПКИ -->
             <div class="row" style="margin-top:14px;">
               <button class="btn2" onclick="useMapPlace()">Выбрать на карте</button>
               <button class="btn2" onclick="useManualPlace()">Ввести вручную</button>
             </div>
 
+            <!-- БЛОК: вручную -->
             <div id="manualPlaceBlock" style="margin-top:6px;">
               <label>Регион</label>
               <select id="region">
                 <option value="">— выберите регион —</option>
-                <option>Астана</option><option>Алматы</option><option>Шымкент</option>
-                <option>Акмолинская область</option><option>Актюбинская область</option><option>Алматинская область</option>
-                <option>Атырауская область</option><option>Восточно-Казахстанская область</option><option>Жамбылская область</option>
-                <option>Жетысуская область</option><option>Западно-Казахстанская область</option><option>Карагандинская область</option>
-                <option>Костанайская область</option><option>Кызылординская область</option><option>Мангистауская область</option>
-                <option>Павлодарская область</option><option>Северо-Казахстанская область</option><option>Туркестанская область</option>
-                <option>Улытауская область</option><option>Абайская область</option>
+                <option>Астана</option>
+                <option>Алматы</option>
+                <option>Шымкент</option>
+                <option>Акмолинская область</option>
+                <option>Актюбинская область</option>
+                <option>Алматинская область</option>
+                <option>Атырауская область</option>
+                <option>Восточно-Казахстанская область</option>
+                <option>Жамбылская область</option>
+                <option>Жетысуская область</option>
+                <option>Западно-Казахстанская область</option>
+                <option>Карагандинская область</option>
+                <option>Костанайская область</option>
+                <option>Кызылординская область</option>
+                <option>Мангистауская область</option>
+                <option>Павлодарская область</option>
+                <option>Северо-Казахстанская область</option>
+                <option>Туркестанская область</option>
+                <option>Улытауская область</option>
+                <option>Абайская область</option>
               </select>
 
               <label>Локация (текст)</label>
               <input id="loc" placeholder="Город, улица, ориентир" />
             </div>
 
+            <!-- БЛОК: по карте -->
             <div id="mapPlaceBlock" class="hide" style="margin-top:6px;">
               <label>Локация (по карте)</label>
               <div class="row">
@@ -343,6 +684,7 @@
             <div id="result" class="hint"></div>
           </section>
 
+          <!-- MY -->
           <section class="card hide" id="tab-my">
             <h2>Мои обращения</h2>
             <div class="muted">Пользователь: <b id="myUser"></b>. Регион можно менять.</div>
@@ -350,24 +692,30 @@
             <div id="myList" class="hint">—</div>
           </section>
 
+          <!-- TRACK -->
           <section class="card hide" id="tab-track">
             <h2>Проверить статус по номеру</h2>
+
             <label>Номер обращения</label>
             <input id="trackId" placeholder="Например: 1024" />
+
             <div class="row" style="margin-top:12px;">
               <button class="btn" onclick="track()">Проверить</button>
               <button class="btn2" onclick="go('dashboard')">Назад</button>
             </div>
+
             <div id="trackOut" class="hint"></div>
           </section>
 
+          <!-- ADMIN -->
           <section class="card hide" id="tab-admin">
             <div class="row" style="justify-content:space-between; gap:12px;">
               <div>
                 <h2 style="margin-bottom:4px;">Реестр обращений</h2>
                 <div class="muted">Точки на карте подсвечены по категории. Наведи курсор — увидишь краткое описание.</div>
               </div>
-              <div class="seg">
+
+              <div class="seg" aria-label="Переключение вида">
                 <button id="btnAdminTable" class="on" onclick="setAdminView('table')">Таблица</button>
                 <button id="btnAdminMap" onclick="setAdminView('map')">Карта</button>
               </div>
@@ -397,10 +745,20 @@
               </select>
             </div>
 
+            <!-- ADMIN MAP -->
             <div id="adminMapWrap" class="hide">
               <div class="map" id="adminMap"></div>
+              <div class="hint" style="margin-top:8px;">
+                Легенда:
+                <span class="pill" style="border-color:rgba(127,127,127,.25)"><span style="display:inline-block;width:10px;height:10px;border-radius:99px;background:var(--c-roads);margin-right:6px;"></span>Дороги</span>
+                <span class="pill" style="border-color:rgba(127,127,127,.25)"><span style="display:inline-block;width:10px;height:10px;border-radius:99px;background:var(--c-light);margin-right:6px;"></span>Освещение</span>
+                <span class="pill" style="border-color:rgba(127,127,127,.25)"><span style="display:inline-block;width:10px;height:10px;border-radius:99px;background:var(--c-trash);margin-right:6px;"></span>Мусор</span>
+                <span class="pill" style="border-color:rgba(127,127,127,.25)"><span style="display:inline-block;width:10px;height:10px;border-radius:99px;background:var(--c-water);margin-right:6px;"></span>Вода</span>
+                <span class="pill" style="border-color:rgba(127,127,127,.25)"><span style="display:inline-block;width:10px;height:10px;border-radius:99px;background:var(--c-other);margin-right:6px;"></span>Другое</span>
+              </div>
             </div>
 
+            <!-- ADMIN TABLE -->
             <div id="adminTableWrap">
               <div class="table-wrap">
                 <table>
@@ -421,6 +779,7 @@
             </div>
           </section>
 
+          <!-- HELP -->
           <section class="card hide" id="tab-help">
             <h2>Помощь</h2>
             <div class="hint">
@@ -446,6 +805,7 @@
     </main>
   </div>
 
+  <!-- МОДАЛКА: выбор точки на карте -->
   <div class="modal" id="pickModal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-head">
@@ -457,6 +817,7 @@
       </div>
       <div class="modal-body">
         <div class="map" id="pickMap"></div>
+
         <div class="mapbar">
           <div class="maphint">
             <span class="coord-pill" id="pickCoord">Точка не выбрана</span>
@@ -467,729 +828,707 @@
             <button class="btn" onclick="confirmPick()">Готово</button>
           </div>
         </div>
+
         <div class="hint">Маркер — белый круг с цветом категории.</div>
       </div>
     </div>
   </div>
 
-  <script>
-    /***********************
-     *  SUPABASE SETTINGS
-     ***********************/
-    // ✅ ВАЖНО: это Project URL, НЕ dashboard
-   const SUPABASE_URL = "https://ehuxkgejxihwndszpbol.sb.co";
-   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."; 
+<script>
+  const STORAGE_KEY = "smartCitizenPortal_v2";
+  const USERS_KEY   = "smartCitizenUsers_v1";
+  const THEME_KEY   = "smartCitizenTheme_v1";
+  const SESSION_KEY = "smartCitizenSession_v1";
 
-    if(!window.supabase){
-      alert("Supabase библиотека не загрузилась. Проверь интернет/блокировщики.");
-      throw new Error("Supabase JS not loaded");
+  const GOV_PASSWORD = "z123456!";
+
+  const STATUS = ["Принято", "В обработке", "Передано в отдел", "Решено"];
+  let reports = [];
+  let users = [];
+  let session = null;
+  let openCommentId = null;
+
+  /* ====== КАРТА: выбор точки гражданином ====== */
+  let placeMode = "manual"; // "manual" | "map"
+  let pickMap = null;
+  let pickMarker = null;
+  let pickedLatLng = null;
+
+  /* ====== КАРТА: view для правительства ====== */
+  let adminView = "table"; // "table" | "map"
+  let adminMap = null;
+  let adminLayer = null;
+
+  startClock();
+  applySavedTheme();
+  loadAll();
+  restoreSession();
+  hookAuthRoleUI();
+  buildRegionFilter();
+  // FIX: синхронизируем видимость кнопки выхода и пунктов меню сразу
+  syncSessionDependentUI();
+  renderAll();
+  go(session ? "dashboard" : "auth");
+
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY || e.key === USERS_KEY) {
+      loadAll();
+      buildRegionFilter();
+      renderAll();
     }
-   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (e.key === THEME_KEY) applySavedTheme();
+  });
 
-    const THEME_KEY   = "smartCitizenTheme_v1";
-    const SESSION_KEY = "smartCitizenSession_v1";
-    const GOV_PASSWORD = "z123456!";
+  function $(id){ return document.getElementById(id); }
 
-    const STATUS = ["Принято", "В обработке", "Передано в отдел", "Решено"];
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
 
-    let reports = [];
-    let users = [];
-    let session = null;
-    let openCommentId = null;
+  function startClock(){
+    const el = $("today");
+    const tick = () => { if(el) el.textContent = new Date().toLocaleString("ru-RU"); };
+    tick();
+    setInterval(tick, 1000);
+  }
 
-    let rtChannel = null;
+  function applySavedTheme(){
+    const t = localStorage.getItem(THEME_KEY) || "light";
+    document.documentElement.setAttribute("data-theme", t);
+    $("icoSun")?.classList.toggle("on", t === "light");
+    $("icoMoon")?.classList.toggle("on", t === "dark");
+  }
+  function toggleTheme(){
+    const cur = document.documentElement.getAttribute("data-theme") || "light";
+    const next = (cur === "dark") ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, next);
+    applySavedTheme();
+    refreshPickMarkerStyle();
+    renderAdminMapMarkers();
+  }
 
-    let placeMode = "manual";
-    let pickMap = null;
-    let pickMarker = null;
-    let pickedLatLng = null;
+  function loadAll(){
+    try{ reports = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+    catch{ reports = []; }
 
-    let adminView = "table";
-    let adminMap = null;
-    let adminLayer = null;
+    try{ users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
+    catch{ users = []; }
 
-    function $(id){ return document.getElementById(id); }
+    reports.forEach(r => {
+      if(!Array.isArray(r.comments)) r.comments = [];
+      if(typeof r.statusIndex !== "number") r.statusIndex = 0;
+      if(!r.region) r.region = "—";
+      if(!r.loc) r.loc = "—";
+      if(r.lat == null) r.lat = null;
+      if(r.lng == null) r.lng = null;
+    });
+  }
 
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+  function saveAll(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+
+  function setSession(s){
+    session = s;
+    if(session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else localStorage.removeItem(SESSION_KEY);
+    updateSessionUI();
+    syncSessionDependentUI(); // FIX: прячем/показываем кнопку выхода и пункты
+  }
+
+  function restoreSession(){
+    try{
+      const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+      session = (s && s.name && s.role) ? s : null;
+    }catch{ session = null; }
+    updateSessionUI();
+  }
+
+  function hookAuthRoleUI(){
+    const roleSel = $("authRole");
+    if(roleSel) roleSel.addEventListener("change", syncGovPasswordUI);
+    syncGovPasswordUI();
+  }
+
+  function syncGovPasswordUI(){
+    const role = $("authRole")?.value || "citizen";
+    $("govPassWrap")?.classList.toggle("hide", role !== "gov");
+  }
+
+  function updateSessionUI(){
+    const chip = $("sessionChip");
+    const info = $("authInfo");
+    if(session){
+      const roleLabel = session.role === "gov" ? "Правительство" : "Гражданин";
+      chip && (chip.textContent = `${session.name} · ${roleLabel}`);
+      info && (info.textContent = `Статус: авторизован как ${roleLabel}`);
+    }else{
+      chip && (chip.textContent = "Гость");
+      info && (info.textContent = "Статус: не авторизован");
+    }
+  }
+
+  // FIX: кнопка "Выйти" только при входе + скрытие разделов по роли
+  function syncSessionDependentUI(){
+    $("logoutWrap")?.classList.toggle("hide", !session);
+
+    const isCitizen = session?.role === "citizen";
+    const isGov = session?.role === "gov";
+    $("nav-report")?.classList.toggle("hide", !isCitizen);
+    $("nav-my")?.classList.toggle("hide", !isCitizen);
+    $("nav-admin")?.classList.toggle("hide", !isGov);
+  }
+
+  function setActiveNav(key){
+    ["auth","dashboard","report","my","track","admin","help"].forEach(k=>{
+      $("nav-"+k)?.classList.toggle("active", k === key);
+    });
+  }
+
+  function animateTab(el){
+    if(!el) return;
+    el.classList.remove("tab-anim");
+    void el.offsetWidth;
+    el.classList.add("tab-anim");
+  }
+
+  function go(name){
+    if(name !== "auth" && !session){
+      alert("Сначала войдите в аккаунт.");
+      name = "auth";
+    }
+    if(name === "admin" && session?.role !== "gov"){
+      alert("Доступ в реестр только для роли «Правительство».");
+      name = "dashboard";
+    }
+    if(name === "report" && session?.role !== "citizen"){
+      alert("Подать обращение может только «Гражданин».");
+      name = "dashboard";
+    }
+    if(name === "my" && session?.role !== "citizen"){
+      alert("Раздел «Мои обращения» доступен только «Гражданину».");
+      name = "dashboard";
     }
 
-    function safeAlertSupabase(error, context){
-      console.error("Supabase error:", context, error);
-      alert("Ошибка базы данных: " + (error?.message || context));
+    ["auth","dashboard","report","my","track","admin","help"].forEach(t=>{
+      $("tab-"+t)?.classList.add("hide");
+    });
+    const tab = $("tab-"+name);
+    tab?.classList.remove("hide");
+    animateTab(tab);
+
+    setActiveNav(name);
+    syncSessionDependentUI();
+
+    if(name === "admin"){
+      if(adminView === "map") initAdminMapOnce();
+      setAdminView(adminView);
     }
 
-    function startClock(){
-      const el = $("today");
-      const tick = () => { if(el) el.textContent = new Date().toLocaleString("ru-RU"); };
-      tick();
-      setInterval(tick, 1000);
+    renderAll();
+  }
+
+  function login(){
+    const name = ($("authName")?.value || "").trim();
+    const role = $("authRole")?.value || "citizen";
+    if(!name){ alert("Введите имя пользователя."); return; }
+
+    if(role === "gov"){
+      const pass = ($("govPass")?.value || "").trim();
+      if(pass !== GOV_PASSWORD){
+        alert("неправильный пароль");
+        return;
+      }
     }
 
-    function applySavedTheme(){
-      const t = localStorage.getItem(THEME_KEY) || "light";
-      document.documentElement.setAttribute("data-theme", t);
-      $("icoSun")?.classList.toggle("on", t === "light");
-      $("icoMoon")?.classList.toggle("on", t === "dark");
+    const existing = users.find(u => u.name.toLowerCase() === name.toLowerCase() && u.role === role);
+    if(!existing){
+      users.push({ name, role, createdAt: Date.now() });
+      saveAll();
     }
 
-    function toggleTheme(){
-      const cur = document.documentElement.getAttribute("data-theme") || "light";
-      const next = (cur === "dark") ? "light" : "dark";
-      localStorage.setItem(THEME_KEY, next);
-      applySavedTheme();
-      refreshPickMarkerStyle();
+    setSession({ name, role });
+
+    if($("authName")) $("authName").value = "";
+    if($("govPass")) $("govPass").value = "";
+
+    go("dashboard");
+  }
+
+  function logout(){
+    openCommentId = null;
+    setSession(null);
+    go("auth");
+  }
+
+  function aiClassify(text){
+    const t = (text || "").toLowerCase();
+    if (/(яма|дорог|асфальт|трещин|люк)/.test(t)) return "roads";
+    if (/(фонар|свет|освещ)/.test(t)) return "light";
+    if (/(мусор|свалк|контейнер|урн)/.test(t)) return "trash";
+    if (/(вода|затоп|павод|луж|канализац)/.test(t)) return "water";
+    return "other";
+  }
+
+  function catName(cat){
+    return {roads:"Дороги", light:"Освещение", trash:"Мусор", water:"Вода/подтопления", other:"Другое"}[cat] || "—";
+  }
+
+  function statusBadge(i){
+    if(i===0) return `<span class="badge b-new">${STATUS[i]}</span>`;
+    if(i===1) return `<span class="badge b-proc">${STATUS[i]}</span>`;
+    if(i===2) return `<span class="badge b-dept">${STATUS[i]}</span>`;
+    return `<span class="badge b-done">${STATUS[i]}</span>`;
+  }
+
+  function makeUniqueId(){
+    let id, tries = 0;
+    do{
+      id = Math.floor(1000 + Math.random()*9000);
+      tries++;
+      if(tries > 60){
+        id = Number(String(Date.now()).slice(-4));
+        break;
+      }
+    }while(reports.some(r => r.id === id));
+    return id;
+  }
+
+  /* ====== МЕСТО: режимы ====== */
+  function useMapPlace(){
+    placeMode = "map";
+    $("manualPlaceBlock")?.classList.add("hide");
+    $("mapPlaceBlock")?.classList.remove("hide");
+    if(!pickedLatLng) $("pickedCoordPill").textContent = "Точка не выбрана";
+  }
+
+  function useManualPlace(){
+    placeMode = "manual";
+    pickedLatLng = null;
+    $("manualPlaceBlock")?.classList.remove("hide");
+    $("mapPlaceBlock")?.classList.add("hide");
+    $("pickedCoordPill").textContent = "Точка не выбрана";
+  }
+
+  function openPickMap(){
+    $("pickModal")?.classList.add("on");
+    $("pickModal")?.setAttribute("aria-hidden","false");
+    initPickMapOnce();
+    setTimeout(()=>{ pickMap?.invalidateSize(); }, 80);
+    $("pickCatPill").textContent = "Категория: " + catName(getChosenCategoryForMarker());
+    refreshPickMarkerStyle();
+  }
+
+  function closePickMap(){
+    $("pickModal")?.classList.remove("on");
+    $("pickModal")?.setAttribute("aria-hidden","true");
+  }
+
+  function centerKZ(){
+    if(!pickMap) return;
+    pickMap.setView([48.0, 67.0], 5);
+  }
+
+  function getCssVarColorForCat(cat){
+    const map = {
+      roads: getComputedStyle(document.documentElement).getPropertyValue("--c-roads").trim(),
+      light: getComputedStyle(document.documentElement).getPropertyValue("--c-light").trim(),
+      trash: getComputedStyle(document.documentElement).getPropertyValue("--c-trash").trim(),
+      water: getComputedStyle(document.documentElement).getPropertyValue("--c-water").trim(),
+      other: getComputedStyle(document.documentElement).getPropertyValue("--c-other").trim()
+    };
+    return map[cat] || map.other;
+  }
+
+  function getChosenCategoryForMarker(){
+    const type = $("type")?.value || "auto";
+    if(type !== "auto") return type;
+    const desc = ($("desc")?.value || "").trim();
+    return aiClassify(desc);
+  }
+
+  function makeDotIcon(cat){
+    const color = getCssVarColorForCat(cat);
+    const html = `<div class="dot-marker"><div class="dot" style="background:${color}"></div></div>`;
+    return L.divIcon({ className:"", html, iconSize:[20,20], iconAnchor:[10,10] });
+  }
+
+  function initPickMapOnce(){
+    if(pickMap) return;
+    if(typeof L === "undefined"){ setTimeout(initPickMapOnce, 60); return; }
+
+    pickMap = L.map("pickMap", { zoomControl:true }).setView([51.169, 71.449], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(pickMap);
+
+    pickMap.on("click", (e) => {
+      pickedLatLng = e.latlng;
+      const cat = getChosenCategoryForMarker();
+      const icon = makeDotIcon(cat);
+
+      if(!pickMarker) pickMarker = L.marker(e.latlng, { icon }).addTo(pickMap);
+      else { pickMarker.setLatLng(e.latlng); pickMarker.setIcon(icon); }
+
+      $("pickCoord").textContent = `Координаты: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+      $("pickCatPill").textContent = "Категория: " + catName(cat);
+    });
+  }
+
+  function refreshPickMarkerStyle(){
+    if(!pickMarker || !pickedLatLng || typeof L === "undefined") return;
+    const cat = getChosenCategoryForMarker();
+    pickMarker.setIcon(makeDotIcon(cat));
+    $("pickCatPill").textContent = "Категория: " + catName(cat);
+  }
+
+  function confirmPick(){
+    if(!pickedLatLng){ alert("Сначала выберите точку на карте."); return; }
+    $("pickedCoordPill").textContent = `Координаты: ${pickedLatLng.lat.toFixed(5)}, ${pickedLatLng.lng.toFixed(5)}`;
+    closePickMap();
+  }
+
+  function submitReport(){
+    if(!session || session.role !== "citizen"){ alert("Подать обращение может только «Гражданин»."); return; }
+
+    const desc = ($("desc")?.value || "").trim();
+    const type = $("type")?.value || "auto";
+    if(!desc){ alert("Добавьте описание проблемы."); return; }
+
+    const cat = (type === "auto") ? aiClassify(desc) : type;
+    $("aiTag") && ($("aiTag").textContent = "Классификация: " + catName(cat));
+
+    let region = "", loc = "", lat = null, lng = null;
+
+    if(placeMode === "map"){
+      if(!pickedLatLng){ alert("Выберите точку на карте (кнопка «Открыть карту»)."); return; }
+      lat = pickedLatLng.lat; lng = pickedLatLng.lng;
+      region = "По карте";
+      loc = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }else{
+      region = ($("region")?.value || "").trim();
+      loc  = ($("loc")?.value || "").trim();
+      if(!region){ alert("Выберите регион."); return; }
+    }
+
+    const id = makeUniqueId();
+    reports.unshift({
+      id, cat,
+      region: region || "—",
+      loc: (loc || "—"),
+      desc,
+      statusIndex: 0,
+      citizen: session.name,
+      createdAt: Date.now(),
+      comments: [],
+      lat, lng
+    });
+
+    saveAll();
+    buildRegionFilter();
+    renderAll();
+
+    const res = $("result");
+    if(res) res.innerHTML = `✅ Обращение <b>#${id}</b> зарегистрировано. Регион: <b>${escapeHtml(region || "—")}</b>. Статус: ${statusBadge(0)}`;
+
+    $("trackId") && ($("trackId").value = id);
+
+    $("desc") && ($("desc").value = "");
+    $("loc") && ($("loc").value = "");
+    $("type") && ($("type").value = "auto");
+    $("region") && ($("region").value = "");
+    pickedLatLng = null;
+    $("pickedCoordPill").textContent = "Точка не выбрана";
+  }
+
+  function track(){
+    const id = Number(($("trackId")?.value || "").trim());
+    const out = $("trackOut");
+    if(!out) return;
+
+    if(!id){ out.innerHTML = "Введите номер обращения."; return; }
+    const item = reports.find(r=>r.id===id);
+    if(!item){ out.innerHTML = "Не найдено. Проверьте номер."; return; }
+
+    const lastComment = item.comments?.length ? item.comments[item.comments.length - 1] : null;
+
+    out.innerHTML = `
+      📌 Обращение <b>#${item.id}</b><br>
+      Категория: <b>${catName(item.cat)}</b><br>
+      Регион: <b>${escapeHtml(item.region)}</b><br>
+      Локация: <b>${escapeHtml(item.loc)}</b><br>
+      Заявитель: <b>${escapeHtml(item.citizen)}</b><br>
+      Статус: ${statusBadge(item.statusIndex)}<br>
+      ${lastComment ? `
+        <div class="panel">
+          <b>Комментарий оператора:</b><br>
+          <div style="margin-top:6px;">${escapeHtml(lastComment.text)}</div>
+          <div class="hint" style="margin-top:6px;">${new Date(lastComment.at).toLocaleString("ru-RU")}</div>
+        </div>
+      ` : `<div class="hint" style="margin-top:8px;">Комментариев от оператора пока нет.</div>`}
+    `;
+  }
+
+  function buildRegionFilter(){
+    const sel = $("regionFilter");
+    if(!sel) return;
+
+    const current = sel.value || "any";
+    const regions = Array.from(new Set(reports.map(r => r.region).filter(x => x && x !== "—"))).sort((a,b)=>a.localeCompare(b,"ru"));
+
+    sel.innerHTML = `<option value="any">Все регионы</option>` + regions.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+    if(regions.includes(current)) sel.value = current;
+    else sel.value = "any";
+  }
+
+  function setStatus(id, value){
+    if(!session || session.role !== "gov"){ alert("Менять статус может только роль «Правительство»."); return; }
+    const item = reports.find(r=>r.id===id);
+    if(!item) return;
+    const idx = Number(value);
+    if(Number.isNaN(idx) || idx < 0 || idx >= STATUS.length) return;
+
+    item.statusIndex = idx;
+    saveAll();
+    renderAll();
+  }
+
+  function toggleCommentPanel(id){
+    openCommentId = (openCommentId === id) ? null : id;
+    renderAll();
+    if(openCommentId !== null){
+      setTimeout(()=>{ document.getElementById("cmt-"+id)?.focus(); }, 50);
+    }
+  }
+
+  function addComment(id){
+    if(!session || session.role !== "gov"){ alert("Комментировать может только роль «Правительство»."); return; }
+    const ta = document.getElementById("cmt-"+id);
+    if(!ta) return;
+
+    const text = ta.value.trim();
+    if(!text){ alert("Введите комментарий."); return; }
+
+    const item = reports.find(r=>r.id===id);
+    if(!item) return;
+
+    if(!Array.isArray(item.comments)) item.comments = [];
+    item.comments.push({ by: session.name, text, at: Date.now() });
+
+    ta.value = "";
+    saveAll();
+    renderAll();
+  }
+
+  function updateRegion(id){
+    if(!session || session.role !== "citizen"){ alert("Менять регион может только гражданин."); return; }
+    const item = reports.find(r=>r.id===id);
+    if(!item) return;
+    if(item.citizen !== session.name){ alert("Можно менять регион только у своих обращений."); return; }
+    const sel = document.getElementById("myRegion-"+id);
+    if(!sel) return;
+    const region = (sel.value || "").trim();
+    if(!region){ alert("Выберите регион."); return; }
+
+    item.region = region;
+    saveAll();
+    buildRegionFilter();
+    renderAll();
+  }
+
+  function getRegionOptionsHtml(selected){
+    const regions = [
+      "Астана","Алматы","Шымкент",
+      "Акмолинская область","Актюбинская область","Алматинская область","Атырауская область",
+      "Восточно-Казахстанская область","Жамбылская область","Жетысуская область","Западно-Казахстанская область",
+      "Карагандинская область","Костанайская область","Кызылординская область","Мангистауская область",
+      "Павлодарская область","Северо-Казахстанская область","Туркестанская область",
+      "Улытауская область","Абайская область"
+    ];
+    return regions.map(r => `<option ${r===selected ? "selected" : ""}>${escapeHtml(r)}</option>`).join("");
+  }
+
+  /* ====== ADMIN VIEW: карта ====== */
+  function setAdminView(v){
+    adminView = v;
+    $("btnAdminTable")?.classList.toggle("on", v === "table");
+    $("btnAdminMap")?.classList.toggle("on", v === "map");
+
+    $("adminTableWrap")?.classList.toggle("hide", v !== "table");
+    $("adminMapWrap")?.classList.toggle("hide", v !== "map");
+
+    if(v === "map"){
+      initAdminMapOnce();
+      setTimeout(()=>adminMap?.invalidateSize(), 80);
+      renderAdminMapMarkers();
+    }
+  }
+
+  function initAdminMapOnce(){
+    if(adminMap) return;
+    if(typeof L === "undefined"){ setTimeout(initAdminMapOnce, 60); return; }
+
+    adminMap = L.map("adminMap", { zoomControl:true }).setView([48.0, 67.0], 5);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(adminMap);
+    adminLayer = L.layerGroup().addTo(adminMap);
+  }
+
+  function shortDesc(s, max=60){
+    const t = String(s || "").trim().replace(/\s+/g," ");
+    if(t.length <= max) return t;
+    return t.slice(0, max-1) + "…";
+  }
+
+  function filteredReportsForAdmin(){
+    const catF = $("filter")?.value || "all";
+    const stF  = $("statusFilter")?.value || "any";
+    const regF = $("regionFilter")?.value || "any";
+
+    let list = [...reports];
+    if(catF !== "all") list = list.filter(r => r.cat === catF);
+    if(stF !== "any") list = list.filter(r => String(r.statusIndex) === stF);
+    if(regF !== "any") list = list.filter(r => r.region === regF);
+    return list;
+  }
+
+  function renderAdminMapMarkers(){
+    if(!adminMap || !adminLayer) return;
+    adminLayer.clearLayers();
+
+    const list = filteredReportsForAdmin().filter(r => typeof r.lat === "number" && typeof r.lng === "number");
+
+    list.forEach(r => {
+      const icon = makeDotIcon(r.cat);
+      const m = L.marker([r.lat, r.lng], { icon }).addTo(adminLayer);
+
+      m.bindTooltip(
+        `<div><b>#${r.id}</b> · ${catName(r.cat)}<br><span style="opacity:.85">${escapeHtml(shortDesc(r.desc))}</span></div>`,
+        { className:"mytip", direction:"top", offset:[0,-10], sticky:true }
+      );
+
+      m.bindPopup(`
+        <div style="font-weight:900;margin-bottom:6px;">#${r.id} · ${catName(r.cat)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">${new Date(r.createdAt).toLocaleString("ru-RU")}</div>
+        <div style="margin-bottom:6px;"><b>Статус:</b> ${STATUS[r.statusIndex]}</div>
+        <div style="margin-bottom:6px;"><b>Регион:</b> ${escapeHtml(r.region)}</div>
+        <div style="margin-bottom:6px;"><b>Локация:</b> ${escapeHtml(r.loc)}</div>
+        <div style="font-size:12px;line-height:1.35;">${escapeHtml(r.desc)}</div>
+      `);
+    });
+
+    if(list.length){
+      const bounds = L.latLngBounds(list.map(r => [r.lat, r.lng]));
+      adminMap.fitBounds(bounds.pad(0.25));
+    }
+  }
+
+  function renderAll(){
+    const total = reports.length;
+    const active = reports.filter(r => r.statusIndex >= 1 && r.statusIndex <= 2).length;
+    const done = reports.filter(r => r.statusIndex === 3).length;
+
+    $("kpiTotal") && ($("kpiTotal").textContent = total);
+    $("kpiActive") && ($("kpiActive").textContent = active);
+    $("kpiDone") && ($("kpiDone").textContent = done);
+
+    $("myUser") && ($("myUser").textContent = session?.name || "—");
+
+    if(session?.role === "gov" && adminView === "map"){
       renderAdminMapMarkers();
     }
 
-    function setSession(s){
-      session = s;
-      if(session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      else localStorage.removeItem(SESSION_KEY);
-      updateSessionUI();
-      syncSessionDependentUI();
-    }
-
-    function restoreSession(){
-      try{
-        const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-        session = (s && s.name && s.role) ? s : null;
-      }catch{ session = null; }
-      updateSessionUI();
-      syncSessionDependentUI();
-    }
-
-    function updateSessionUI(){
-      const chip = $("sessionChip");
-      const info = $("authInfo");
-      if(session){
-        const roleLabel = session.role === "gov" ? "Правительство" : "Гражданин";
-        chip && (chip.textContent = `${session.name} · ${roleLabel}`);
-        info && (info.textContent = `Статус: авторизован как ${roleLabel}`);
-      }else{
-        chip && (chip.textContent = "Гость");
-        info && (info.textContent = "Статус: не авторизован");
-      }
-    }
-
-    function syncSessionDependentUI(){
-      const isLoggedIn = !!session;
-      const lw = $("logoutWrap");
-      if(lw) lw.style.display = isLoggedIn ? "block" : "none";
-
-      const isCitizen = session?.role === "citizen";
-      const isGov = session?.role === "gov";
-      $("nav-report")?.classList.toggle("hide", !isCitizen);
-      $("nav-my")?.classList.toggle("hide", !isCitizen);
-      $("nav-admin")?.classList.toggle("hide", !isGov);
-    }
-
-    function setActiveNav(key){
-      ["auth","dashboard","report","my","track","admin","help"].forEach(k=>{
-        $("nav-"+k)?.classList.toggle("active", k === key);
-      });
-    }
-
-    function animateTab(el){
-      if(!el) return;
-      el.classList.remove("tab-anim");
-      void el.offsetWidth;
-      el.classList.add("tab-anim");
-    }
-
-    function go(name){
-      if(name !== "auth" && !session){
-        alert("Сначала войдите в аккаунт.");
-        name = "auth";
-      }
-      if(name === "admin" && session?.role !== "gov"){
-        alert("Доступ в реестр только для роли «Правительство».");
-        name = "dashboard";
-      }
-      if(name === "report" && session?.role !== "citizen"){
-        alert("Подать обращение может только «Гражданин».");
-        name = "dashboard";
-      }
-      if(name === "my" && session?.role !== "citizen"){
-        alert("Раздел «Мои обращения» доступен только «Гражданину».");
-        name = "dashboard";
-      }
-
-      ["auth","dashboard","report","my","track","admin","help"].forEach(t=>{
-        $("tab-"+t)?.classList.add("hide");
-      });
-      const tab = $("tab-"+name);
-      tab?.classList.remove("hide");
-      animateTab(tab);
-
-      setActiveNav(name);
-      syncSessionDependentUI();
-
-      if(name === "admin"){
-        if(adminView === "map") initAdminMapOnce();
-        setAdminView(adminView);
-      }
-
-      renderAll();
-    }
-
-    function hookAuthRoleUI(){
-      const roleSel = $("authRole");
-      if(roleSel) roleSel.addEventListener("change", syncGovPasswordUI);
-      syncGovPasswordUI();
-    }
-
-    function syncGovPasswordUI(){
-      const role = $("authRole")?.value || "citizen";
-      $("govPassWrap")?.classList.toggle("hide", role !== "gov");
-    }
-
-    function aiClassify(text){
-      const t = (text || "").toLowerCase();
-      if (/(яма|дорог|асфальт|трещин|люк)/.test(t)) return "roads";
-      if (/(фонар|свет|освещ)/.test(t)) return "light";
-      if (/(мусор|свалк|контейнер|урн)/.test(t)) return "trash";
-      if (/(вода|затоп|павод|луж|канализац)/.test(t)) return "water";
-      return "other";
-    }
-
-    function catName(cat){
-      return {roads:"Дороги", light:"Освещение", trash:"Мусор", water:"Вода/подтопления", other:"Другое"}[cat] || "—";
-    }
-
-    function statusBadge(i){
-      if(i===0) return `<span class="badge b-new">${STATUS[i]}</span>`;
-      if(i===1) return `<span class="badge b-proc">${STATUS[i]}</span>`;
-      if(i===2) return `<span class="badge b-dept">${STATUS[i]}</span>`;
-      return `<span class="badge b-done">${STATUS[i]}</span>`;
-    }
-
-    function makeUniqueId(){
-      let id, tries = 0;
-      do{
-        id = Math.floor(1000 + Math.random()*9000);
-        tries++;
-        if(tries > 60){
-          id = Number(String(Date.now()).slice(-4));
-          break;
-        }
-      }while(reports.some(r => r.id === id));
-      return id;
-    }
-
-    async function loadAll(){
-      {
-        const { data, error } = await sb.from("reports_sc").select("*").order("created_at", { ascending: false });
-        if(error) return safeAlertSupabase(error, "load reports");
-        reports = (data || []).map(r => ({
-          id: r.rid,
-          cat: r.cat,
-          region: r.region ?? "—",
-          loc: r.loc ?? "—",
-          desc: r.desc ?? "",
-          statusIndex: (typeof r.status_index === "number") ? r.status_index : 0,
-          citizen: r.citizen ?? "—",
-          createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
-          comments: Array.isArray(r.comments) ? r.comments : [],
-          lat: (typeof r.lat === "number") ? r.lat : null,
-          lng: (typeof r.lng === "number") ? r.lng : null
-        }));
-      }
-      {
-        const { data, error } = await sb.from("users_sc").select("*").order("created_at", { ascending: false });
-        if(error) return safeAlertSupabase(error, "load users");
-        users = (data || []).map(u => ({ name: u.name, role: u.role, createdAt: u.created_at ? new Date(u.created_at).getTime() : Date.now() }));
-      }
-    }
-
-    async function upsertUser(name, role){
-      const { error } = await sb.from("users_sc").upsert({ name, role });
-      if(error) return safeAlertSupabase(error, "upsert user");
-    }
-
-    async function insertReport(item){
-      const payload = {
-        rid: item.id,
-        cat: item.cat,
-        region: item.region,
-        loc: item.loc,
-        desc: item.desc,
-        status_index: item.statusIndex ?? 0,
-        citizen: item.citizen,
-        lat: item.lat ?? null,
-        lng: item.lng ?? null,
-        comments: item.comments ?? []
-      };
-      const { error } = await sb.from("reports_sc").insert(payload);
-      if(error) return safeAlertSupabase(error, "insert report");
-    }
-
-    async function updateReportStatus(rid, statusIndex){
-      const { error } = await sb.from("reports_sc").update({ status_index: statusIndex }).eq("rid", rid);
-      if(error) return safeAlertSupabase(error, "update status");
-    }
-
-    async function updateReportRegion(rid, citizen, region){
-      const { error } = await sb.from("reports_sc").update({ region }).eq("rid", rid).eq("citizen", citizen);
-      if(error) return safeAlertSupabase(error, "update region");
-    }
-
-    async function addReportComment(rid, commentObj){
-      const { data, error } = await sb.from("reports_sc").select("comments").eq("rid", rid).maybeSingle();
-      if(error) return safeAlertSupabase(error, "load comments");
-      const arr = Array.isArray(data?.comments) ? data.comments : [];
-      arr.push(commentObj);
-      const upd = await sb.from("reports_sc").update({ comments: arr }).eq("rid", rid);
-      if(upd.error) return safeAlertSupabase(upd.error, "save comment");
-    }
-
-    function subscribeRealtime(){
-      if(rtChannel) return;
-      rtChannel = sb.channel("sc-realtime")
-        .on("postgres_changes", { event: "*", schema: "public", table: "reports_sc" }, async () => {
-          await loadAll(); buildRegionFilter(); renderAll();
-        })
-        .on("postgres_changes", { event: "*", schema: "public", table: "users_sc" }, async () => {
-          await loadAll(); renderAll();
-        })
-        .subscribe();
-    }
-
-    function useMapPlace(){
-      placeMode = "map";
-      $("manualPlaceBlock")?.classList.add("hide");
-      $("mapPlaceBlock")?.classList.remove("hide");
-      if(!pickedLatLng) $("pickedCoordPill").textContent = "Точка не выбрана";
-    }
-
-    function useManualPlace(){
-      placeMode = "manual";
-      pickedLatLng = null;
-      $("manualPlaceBlock")?.classList.remove("hide");
-      $("mapPlaceBlock")?.classList.add("hide");
-      $("pickedCoordPill").textContent = "Точка не выбрана";
-    }
-
-    function openPickMap(){
-      $("pickModal")?.classList.add("on");
-      $("pickModal")?.setAttribute("aria-hidden","false");
-      initPickMapOnce();
-      setTimeout(()=>{ pickMap?.invalidateSize(); }, 80);
-      $("pickCatPill").textContent = "Категория: " + catName(getChosenCategoryForMarker());
-      refreshPickMarkerStyle();
-    }
-
-    function closePickMap(){
-      $("pickModal")?.classList.remove("on");
-      $("pickModal")?.setAttribute("aria-hidden","true");
-    }
-
-    function centerKZ(){
-      if(!pickMap) return;
-      pickMap.setView([48.0, 67.0], 5);
-    }
-
-    function getCssVarColorForCat(cat){
-      const map = {
-        roads: getComputedStyle(document.documentElement).getPropertyValue("--c-roads").trim(),
-        light: getComputedStyle(document.documentElement).getPropertyValue("--c-light").trim(),
-        trash: getComputedStyle(document.documentElement).getPropertyValue("--c-trash").trim(),
-        water: getComputedStyle(document.documentElement).getPropertyValue("--c-water").trim(),
-        other: getComputedStyle(document.documentElement).getPropertyValue("--c-other").trim()
-      };
-      return map[cat] || map.other;
-    }
-
-    function getChosenCategoryForMarker(){
-      const type = $("type")?.value || "auto";
-      if(type !== "auto") return type;
-      const desc = ($("desc")?.value || "").trim();
-      return aiClassify(desc);
-    }
-
-    function makeDotIcon(cat){
-      const color = getCssVarColorForCat(cat);
-      const html = `<div class="dot-marker"><div class="dot" style="background:${color}"></div></div>`;
-      return L.divIcon({ className:"", html, iconSize:[20,20], iconAnchor:[10,10] });
-    }
-
-    function initPickMapOnce(){
-      if(pickMap) return;
-      if(typeof L === "undefined"){ setTimeout(initPickMapOnce, 60); return; }
-
-      pickMap = L.map("pickMap", { zoomControl:true }).setView([51.169, 71.449], 11);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(pickMap);
-
-      pickMap.on("click", (e) => {
-        pickedLatLng = e.latlng;
-        const cat = getChosenCategoryForMarker();
-        const icon = makeDotIcon(cat);
-
-        if(!pickMarker) pickMarker = L.marker(e.latlng, { icon }).addTo(pickMap);
-        else { pickMarker.setLatLng(e.latlng); pickMarker.setIcon(icon); }
-
-        $("pickCoord").textContent = `Координаты: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
-        $("pickCatPill").textContent = "Категория: " + catName(cat);
-      });
-    }
-
-    function refreshPickMarkerStyle(){
-      if(!pickMarker || !pickedLatLng || typeof L === "undefined") return;
-      const cat = getChosenCategoryForMarker();
-      pickMarker.setIcon(makeDotIcon(cat));
-      $("pickCatPill").textContent = "Категория: " + catName(cat);
-    }
-
-    function confirmPick(){
-      if(!pickedLatLng){ alert("Сначала выберите точку на карте."); return; }
-      $("pickedCoordPill").textContent = `Координаты: ${pickedLatLng.lat.toFixed(5)}, ${pickedLatLng.lng.toFixed(5)}`;
-      closePickMap();
-    }
-
-    async function login(){
-      const name = ($("authName")?.value || "").trim();
-      const role = $("authRole")?.value || "citizen";
-      if(!name){ alert("Введите имя пользователя."); return; }
-
-      if(role === "gov"){
-        const pass = ($("govPass")?.value || "").trim();
-        if(pass !== GOV_PASSWORD){ alert("Неправильный пароль"); return; }
-      }
-
-      await upsertUser(name, role);
-      setSession({ name, role });
-
-      if($("authName")) $("authName").value = "";
-      if($("govPass")) $("govPass").value = "";
-
-      go("dashboard");
-    }
-
-    function logout(){
-      openCommentId = null;
-      setSession(null);
-      go("auth");
-    }
-
-    async function submitReport(){
+    const myList = $("myList");
+    if(myList){
       if(!session || session.role !== "citizen"){
-        alert("Подать обращение может только «Гражданин».");
-        return;
-      }
-
-      const desc = ($("desc")?.value || "").trim();
-      const type = $("type")?.value || "auto";
-      if(!desc){ alert("Добавьте описание проблемы."); return; }
-
-      const cat = (type === "auto") ? aiClassify(desc) : type;
-      $("aiTag") && ($("aiTag").textContent = "Классификация: " + catName(cat));
-
-      let region = "", loc = "", lat = null, lng = null;
-
-      if(placeMode === "map"){
-        if(!pickedLatLng){ alert("Выберите точку на карте (кнопка «Открыть карту»)."); return; }
-        lat = pickedLatLng.lat; lng = pickedLatLng.lng;
-        region = "По карте";
-        loc = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        myList.innerHTML = "—";
       }else{
-        region = ($("region")?.value || "").trim();
-        loc  = ($("loc")?.value || "").trim();
-        if(!region){ alert("Выберите регион."); return; }
-      }
+        const mine = reports.filter(r => r.citizen === session.name);
+        myList.innerHTML = mine.length ? mine.map(r=>{
+          const last = r.comments?.length ? r.comments[r.comments.length - 1] : null;
+          const regionOptions = getRegionOptionsHtml(r.region);
 
-      const id = makeUniqueId();
-      const item = {
-        id, cat, region: region || "—", loc: (loc || "—"),
-        desc, statusIndex: 0, citizen: session.name, createdAt: Date.now(),
-        comments: [], lat, lng
-      };
-
-      await insertReport(item);
-      await loadAll();
-      buildRegionFilter();
-      renderAll();
-
-      const res = $("result");
-      if(res) res.innerHTML = `✅ Обращение <b>#${id}</b> зарегистрировано. Регион: <b>${escapeHtml(item.region)}</b>. Статус: ${statusBadge(0)}`;
-
-      $("trackId") && ($("trackId").value = id);
-      $("desc") && ($("desc").value = "");
-      $("loc") && ($("loc").value = "");
-      $("type") && ($("type").value = "auto");
-      $("region") && ($("region").value = "");
-      pickedLatLng = null;
-      $("pickedCoordPill").textContent = "Точка не выбрана";
-    }
-
-    function track(){
-      const id = Number(($("trackId")?.value || "").trim());
-      const out = $("trackOut");
-      if(!out) return;
-
-      if(!id){ out.innerHTML = "Введите номер обращения."; return; }
-      const item = reports.find(r=>r.id===id);
-      if(!item){ out.innerHTML = "Не найдено. Проверьте номер."; return; }
-
-      const lastComment = item.comments?.length ? item.comments[item.comments.length - 1] : null;
-
-      out.innerHTML = `
-        📌 Обращение <b>#${item.id}</b><br>
-        Категория: <b>${catName(item.cat)}</b><br>
-        Регион: <b>${escapeHtml(item.region)}</b><br>
-        Локация: <b>${escapeHtml(item.loc)}</b><br>
-        Заявитель: <b>${escapeHtml(item.citizen)}</b><br>
-        Статус: ${statusBadge(item.statusIndex)}<br>
-        ${lastComment ? `
-          <div class="panel">
-            <b>Комментарий оператора:</b><br>
-            <div style="margin-top:6px;">${escapeHtml(lastComment.text)}</div>
-            <div class="hint" style="margin-top:6px;">${new Date(lastComment.at).toLocaleString("ru-RU")}</div>
-          </div>
-        ` : `<div class="hint" style="margin-top:8px;">Комментариев от оператора пока нет.</div>`}
-      `;
-    }
-
-    function buildRegionFilter(){
-      const sel = $("regionFilter");
-      if(!sel) return;
-      const current = sel.value || "any";
-      const regions = Array.from(new Set(reports.map(r => r.region).filter(x => x && x !== "—"))).sort((a,b)=>a.localeCompare(b,"ru"));
-      sel.innerHTML = `<option value="any">Все регионы</option>` + regions.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
-      sel.value = regions.includes(current) ? current : "any";
-    }
-
-    async function setStatus(id, value){
-      if(!session || session.role !== "gov"){ alert("Менять статус может только роль «Правительство»."); return; }
-      const idx = Number(value);
-      if(Number.isNaN(idx) || idx < 0 || idx >= STATUS.length) return;
-      await updateReportStatus(id, idx);
-      await loadAll();
-      renderAll();
-    }
-
-    function toggleCommentPanel(id){
-      openCommentId = (openCommentId === id) ? null : id;
-      renderAll();
-      if(openCommentId !== null){
-        setTimeout(()=>{ document.getElementById("cmt-"+id)?.focus(); }, 50);
-      }
-    }
-
-    async function addComment(id){
-      if(!session || session.role !== "gov"){ alert("Комментировать может только роль «Правительство»."); return; }
-      const ta = document.getElementById("cmt-"+id);
-      if(!ta) return;
-      const text = ta.value.trim();
-      if(!text){ alert("Введите комментарий."); return; }
-      await addReportComment(id, { by: session.name, text, at: Date.now() });
-      ta.value = "";
-      await loadAll();
-      renderAll();
-    }
-
-    async function updateRegion(id){
-      if(!session || session.role !== "citizen"){ alert("Менять регион может только гражданин."); return; }
-      const item = reports.find(r=>r.id===id);
-      if(!item) return;
-      if(item.citizen !== session.name){ alert("Можно менять регион только у своих обращений."); return; }
-      const sel = document.getElementById("myRegion-"+id);
-      if(!sel) return;
-      const region = (sel.value || "").trim();
-      if(!region){ alert("Выберите регион."); return; }
-      await updateReportRegion(id, session.name, region);
-      await loadAll();
-      buildRegionFilter();
-      renderAll();
-    }
-
-    function getRegionOptionsHtml(selected){
-      const regions = [
-        "Астана","Алматы","Шымкент",
-        "Акмолинская область","Актюбинская область","Алматинская область","Атырауская область",
-        "Восточно-Казахстанская область","Жамбылская область","Жетысуская область","Западно-Казахстанская область",
-        "Карагандинская область","Костанайская область","Кызылординская область","Мангистауская область",
-        "Павлодарская область","Северо-Казахстанская область","Туркестанская область",
-        "Улытауская область","Абайская область"
-      ];
-      return regions.map(r => `<option ${r===selected ? "selected" : ""}>${escapeHtml(r)}</option>`).join("");
-    }
-
-    function setAdminView(v){
-      adminView = v;
-      $("btnAdminTable")?.classList.toggle("on", v === "table");
-      $("btnAdminMap")?.classList.toggle("on", v === "map");
-      $("adminTableWrap")?.classList.toggle("hide", v !== "table");
-      $("adminMapWrap")?.classList.toggle("hide", v !== "map");
-
-      if(v === "map"){
-        initAdminMapOnce();
-        setTimeout(()=>adminMap?.invalidateSize(), 80);
-        renderAdminMapMarkers();
-      }
-    }
-
-    function initAdminMapOnce(){
-      if(adminMap) return;
-      if(typeof L === "undefined"){ setTimeout(initAdminMapOnce, 60); return; }
-      adminMap = L.map("adminMap", { zoomControl:true }).setView([48.0, 67.0], 5);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(adminMap);
-      adminLayer = L.layerGroup().addTo(adminMap);
-    }
-
-    function shortDesc(s, max=60){
-      const t = String(s || "").trim().replace(/\s+/g," ");
-      if(t.length <= max) return t;
-      return t.slice(0, max-1) + "…";
-    }
-
-    function filteredReportsForAdmin(){
-      const catF = $("filter")?.value || "all";
-      const stF  = $("statusFilter")?.value || "any";
-      const regF = $("regionFilter")?.value || "any";
-      let list = [...reports];
-      if(catF !== "all") list = list.filter(r => r.cat === catF);
-      if(stF !== "any") list = list.filter(r => String(r.statusIndex) === stF);
-      if(regF !== "any") list = list.filter(r => r.region === regF);
-      return list;
-    }
-
-    function renderAdminMapMarkers(){
-      if(!adminMap || !adminLayer) return;
-      adminLayer.clearLayers();
-      const list = filteredReportsForAdmin().filter(r => typeof r.lat === "number" && typeof r.lng === "number");
-      list.forEach(r => {
-        const icon = makeDotIcon(r.cat);
-        const m = L.marker([r.lat, r.lng], { icon }).addTo(adminLayer);
-        m.bindTooltip(
-          `<div><b>#${r.id}</b> · ${catName(r.cat)}<br><span style="opacity:.85">${escapeHtml(shortDesc(r.desc))}</span></div>`,
-          { className:"mytip", direction:"top", offset:[0,-10], sticky:true }
-        );
-      });
-      if(list.length){
-        const bounds = L.latLngBounds(list.map(r => [r.lat, r.lng]));
-        adminMap.fitBounds(bounds.pad(0.25));
-      }
-    }
-
-    function renderAll(){
-      const total = reports.length;
-      const active = reports.filter(r => r.statusIndex >= 1 && r.statusIndex <= 2).length;
-      const done = reports.filter(r => r.statusIndex === 3).length;
-
-      $("kpiTotal") && ($("kpiTotal").textContent = total);
-      $("kpiActive") && ($("kpiActive").textContent = active);
-      $("kpiDone") && ($("kpiDone").textContent = done);
-
-      $("myUser") && ($("myUser").textContent = session?.name || "—");
-
-      if(session?.role === "gov" && adminView === "map"){
-        renderAdminMapMarkers();
-      }
-
-      const myList = $("myList");
-      if(myList){
-        if(!session || session.role !== "citizen"){
-          myList.innerHTML = "—";
-        }else{
-          const mine = reports.filter(r => r.citizen === session.name);
-          myList.innerHTML = mine.length ? mine.map(r=>{
-            const last = r.comments?.length ? r.comments[r.comments.length - 1] : null;
-            const regionOptions = getRegionOptionsHtml(r.region);
-            return `
-              <div class="card">
-                <div class="row" style="justify-content:space-between;">
-                  <div><b>#${r.id}</b> · ${catName(r.cat)}</div>
-                  <div>${statusBadge(r.statusIndex)}</div>
-                </div>
-                <div class="hint" style="margin-top:8px;"><b>Локация:</b> ${escapeHtml(r.loc)}</div>
-                <div class="hint"><b>Регион:</b></div>
-                <div class="row" style="margin-top:6px;">
-                  <select id="myRegion-${r.id}" style="max-width:360px;">${regionOptions}</select>
-                  <button class="mini-btn" onclick="updateRegion(${r.id})">Сохранить регион</button>
-                </div>
-                <div style="margin-top:10px;">${escapeHtml(r.desc)}</div>
-                ${last ? `
-                  <div class="panel">
-                    <b>Комментарий оператора:</b>
-                    <div style="margin-top:6px;">${escapeHtml(last.text)}</div>
-                    <div class="hint" style="margin-top:6px;">${new Date(last.at).toLocaleString("ru-RU")}</div>
-                  </div>
-                ` : `<div class="hint" style="margin-top:8px;">Комментариев от оператора пока нет.</div>`}
+          return `
+            <div class="card">
+              <div class="row" style="justify-content:space-between;">
+                <div><b>#${r.id}</b> · ${catName(r.cat)}</div>
+                <div>${statusBadge(r.statusIndex)}</div>
               </div>
-            `;
-          }).join("") : "Нет обращений.";
-        }
-      }
 
-      const tbody = $("tbody");
-      if(tbody){
-        if(!session || session.role !== "gov"){
-          tbody.innerHTML = "";
-        }else{
-          const list = filteredReportsForAdmin();
-          tbody.innerHTML = list.length ? list.map(r=>{
-            const last = r.comments?.length ? r.comments[r.comments.length - 1] : null;
-            const statusOptions = STATUS.map((s, i)=>`<option value="${i}" ${i===r.statusIndex ? "selected" : ""}>${s}</option>`).join("");
-            return `
-              <tr>
-                <td><b>${r.id}</b><div class="hint">${new Date(r.createdAt).toLocaleString("ru-RU")}</div></td>
-                <td>${catName(r.cat)}</td>
-                <td>${escapeHtml(r.citizen)}</td>
-                <td class="wrap">${escapeHtml(r.region)}</td>
-                <td class="wrap">${escapeHtml(r.loc)}</td>
-                <td>
-                  <select class="status-select" onchange="setStatus(${r.id}, this.value)">${statusOptions}</select>
-                  <div style="margin-top:8px;">${statusBadge(r.statusIndex)}</div>
-                </td>
-                <td>
-                  <button class="mini-btn" onclick="toggleCommentPanel(${r.id})">Комментарий${last ? " •" : ""}</button>
-                  ${openCommentId === r.id ? `
-                    <div class="panel">
-                      <textarea id="cmt-${r.id}" placeholder="Комментарий для гражданина..."></textarea>
-                      <div class="row" style="margin-top:8px;">
-                        <button class="btn" onclick="addComment(${r.id})">Сохранить</button>
-                        <button class="btn2" onclick="toggleCommentPanel(${r.id})">Закрыть</button>
-                      </div>
-                    </div>
-                  ` : ``}
-                </td>
-              </tr>
-            `;
-          }).join("") : `<tr><td colspan="7" class="hint">Нет записей по фильтрам.</td></tr>`;
-        }
+              <div class="hint" style="margin-top:8px;"><b>Локация:</b> ${escapeHtml(r.loc)}</div>
+              <div class="hint"><b>Регион:</b></div>
+
+              <div class="row" style="margin-top:6px;">
+                <select id="myRegion-${r.id}" style="max-width:360px;">${regionOptions}</select>
+                <button class="mini-btn" onclick="updateRegion(${r.id})">Сохранить регион</button>
+              </div>
+
+              <div style="margin-top:10px;">${escapeHtml(r.desc)}</div>
+
+              ${last ? `
+                <div class="panel">
+                  <b>Комментарий оператора:</b>
+                  <div style="margin-top:6px;">${escapeHtml(last.text)}</div>
+                  <div class="hint" style="margin-top:6px;">${new Date(last.at).toLocaleString("ru-RU")}</div>
+                </div>
+              ` : `<div class="hint" style="margin-top:8px;">Комментариев от оператора пока нет.</div>`}
+            </div>
+          `;
+        }).join("") : "Нет обращений.";
       }
     }
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      // на старте точно скрываем выход
-      $("logoutWrap") && ($("logoutWrap").style.display = "none");
+    const tbody = $("tbody");
+    if(tbody){
+      if(!session || session.role !== "gov"){
+        tbody.innerHTML = "";
+      }else{
+        const list = filteredReportsForAdmin();
 
-      startClock();
-      applySavedTheme();
-      restoreSession();
-      hookAuthRoleUI();
+        tbody.innerHTML = list.length ? list.map(r=>{
+          const last = r.comments?.length ? r.comments[r.comments.length - 1] : null;
 
-      await loadAll();
-      buildRegionFilter();
-      subscribeRealtime();
+          const statusOptions = STATUS.map((s, i)=>
+            `<option value="${i}" ${i===r.statusIndex ? "selected" : ""}>${s}</option>`
+          ).join("");
 
-      renderAll();
-      go(session ? "dashboard" : "auth");
-    });
-
-    // ✅ ГАРАНТИЯ: чтобы inline onclick работал везде (Vercel/строгие режимы)
-    Object.assign(window, {
-      go, login, logout, toggleTheme,
-      submitReport, track,
-      useMapPlace, useManualPlace, openPickMap, closePickMap, centerKZ, confirmPick,
-      setAdminView, setStatus, toggleCommentPanel, addComment, updateRegion,
-      refreshPickMarkerStyle, renderAll
-    });
-  </script>
+          return `
+            <tr>
+              <td>
+                <b>${r.id}</b>
+                <div class="hint">${new Date(r.createdAt).toLocaleString("ru-RU")}</div>
+              </td>
+              <td>${catName(r.cat)}</td>
+              <td>${escapeHtml(r.citizen)}</td>
+              <td class="wrap">${escapeHtml(r.region)}</td>
+              <td class="wrap">${escapeHtml(r.loc)}</td>
+              <td>
+                <select class="status-select" onchange="setStatus(${r.id}, this.value)">
+                  ${statusOptions}
+                </select>
+                <div style="margin-top:8px;">${statusBadge(r.statusIndex)}</div>
+              </td>
+              <td>
+                <button class="mini-btn" onclick="toggleCommentPanel(${r.id})">Комментарий${last ? " •" : ""}</button>
+                ${openCommentId === r.id ? `
+                  <div class="panel">
+                    <textarea id="cmt-${r.id}" placeholder="Комментарий для гражданина..."></textarea>
+                    <div class="row" style="margin-top:8px;">
+                      <button class="btn" onclick="addComment(${r.id})">Сохранить</button>
+                      <button class="btn2" onclick="toggleCommentPanel(${r.id})">Закрыть</button>
+                    </div>
+                  </div>
+                ` : ``}
+              </td>
+            </tr>
+          `;
+        }).join("") : `<tr><td colspan="7" class="hint">Нет записей по фильтрам.</td></tr>`;
+      }
+    }
+  }
+</script>
 </body>
 </html>
