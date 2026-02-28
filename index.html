@@ -253,7 +253,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width: 1020px;
+      min-width: 1100px;
     }
     th, td{
       padding:10px;
@@ -446,6 +446,41 @@
       background: rgba(30,136,229,0.14);
       color: var(--text);
     }
+
+    /* ===== ФОТО: мини-галерея ===== */
+    .thumbs{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+    .thumb{
+      width:84px;
+      height:64px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      overflow:hidden;
+      background: rgba(127,127,127,0.06);
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+    }
+    .thumb img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .photo-note{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:8px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
   </style>
 </head>
 
@@ -545,7 +580,7 @@
             </div>
           </section>
 
-          <!-- REPORT (FIXED: убрал дубли, оставил 2 кнопки) -->
+          <!-- REPORT -->
           <section class="card hide" id="tab-report">
             <h2>Подать обращение</h2>
             <div class="muted">Опишите проблему и укажите место. Можно выбрать точку <b>на карте</b>.</div>
@@ -563,7 +598,15 @@
               <option value="other">Другое</option>
             </select>
 
-            <!-- ДВЕ КНОПКИ (как просил): Выбрать на карте / Ввести вручную -->
+            <!-- NEW: фото -->
+            <label>Фото (необязательно)</label>
+            <input id="photos" type="file" accept="image/*" multiple />
+            <div class="photo-note">
+              <span class="pill" id="photoCountPill">Фото: 0</span>
+              <span>Файлы автоматически уменьшаются (чтобы не забить localStorage).</span>
+            </div>
+
+            <!-- ДВЕ КНОПКИ -->
             <div class="row" style="margin-top:14px;">
               <button class="btn2" onclick="useMapPlace()">Выбрать на карте</button>
               <button class="btn2" onclick="useManualPlace()">Ввести вручную</button>
@@ -704,7 +747,7 @@
                       <th style="min-width:170px;">Регион</th>
                       <th style="min-width:220px;">Локация</th>
                       <th style="min-width:190px;">Статус</th>
-                      <th style="min-width:170px;">Действия</th>
+                      <th style="min-width:200px;">Действия</th>
                     </tr>
                   </thead>
                   <tbody id="tbody"></tbody>
@@ -719,7 +762,8 @@
             <div class="hint">
               • Войдите как гражданин → “Подать обращение”.<br>
               • Можно выбрать место на карте (тогда регион/текст-локация не нужны).<br>
-              • Правительство меняет статус через список или смотрит точки на карте.
+              • Правительство меняет статус через список или смотрит точки на карте.<br>
+              • Фото можно прикрепить при подаче обращения и просматривать в реестре.
             </div>
           </section>
 
@@ -768,6 +812,30 @@
     </div>
   </div>
 
+  <!-- NEW: МОДАЛКА для просмотра фото -->
+  <div class="modal" id="photoModal" aria-hidden="true">
+    <div class="modal-card" style="width:min(920px,100%);">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="photoModalTitle">Фото</div>
+          <div class="muted" style="font-size:12px;" id="photoModalSub">—</div>
+        </div>
+        <button class="btn2" onclick="closePhotoModal()">Закрыть</button>
+      </div>
+      <div class="modal-body">
+        <div style="border:1px solid var(--line); border-radius:14px; overflow:hidden; background:rgba(127,127,127,0.06);">
+          <img id="photoModalImg" alt="Фото обращения" style="width:100%; height:auto; display:block;">
+        </div>
+
+        <div class="row" style="justify-content:space-between; margin-top:10px;">
+          <button class="btn2" onclick="prevPhoto()">←</button>
+          <span class="pill" id="photoModalCounter">1 / 1</span>
+          <button class="btn2" onclick="nextPhoto()">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
   const STORAGE_KEY = "smartCitizenPortal_v2";
   const USERS_KEY   = "smartCitizenUsers_v1";
@@ -793,11 +861,23 @@
   let adminMap = null;
   let adminLayer = null;
 
+  /* ====== ФОТО: состояние ====== */
+  let pendingPhotos = []; // {name, type, dataUrl}
+  const PHOTO_MAX_SIDE = 1280;   // ограничение по стороне
+  const PHOTO_QUALITY  = 0.78;   // jpg quality
+  const PHOTO_MAX_COUNT = 6;     // лимит фото на обращение
+
+  /* ====== Фото-модалка ====== */
+  let photoModalList = []; // {name,type,dataUrl}
+  let photoModalIndex = 0;
+  let photoModalContext = ""; // строка типа "#1234"
+
   startClock();
   applySavedTheme();
   loadAll();
   restoreSession();
   hookAuthRoleUI();
+  hookPhotoInput();
   buildRegionFilter();
   renderAll();
   go(session ? "dashboard" : "auth");
@@ -858,12 +938,20 @@
       if(!r.loc) r.loc = "—";
       if(r.lat == null) r.lat = null;
       if(r.lng == null) r.lng = null;
+
+      // NEW: фото
+      if(!Array.isArray(r.photos)) r.photos = [];
     });
   }
 
   function saveAll(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }catch(err){
+      alert("Память localStorage переполнена. Уменьши количество/размер фото (или удали старые обращения).");
+      console.error(err);
+    }
   }
 
   function setSession(s){
@@ -1025,6 +1113,152 @@
     return id;
   }
 
+  /* ====== ФОТО: обработка ====== */
+  function hookPhotoInput(){
+    const inp = $("photos");
+    if(!inp) return;
+    inp.addEventListener("change", async () => {
+      const files = Array.from(inp.files || []);
+      pendingPhotos = [];
+      $("photoCountPill") && ($("photoCountPill").textContent = "Фото: 0");
+
+      if(!files.length) return;
+
+      const take = files.slice(0, PHOTO_MAX_COUNT);
+      for(const f of take){
+        try{
+          const p = await compressImageFileToDataUrl(f, PHOTO_MAX_SIDE, PHOTO_QUALITY);
+          pendingPhotos.push({ name: f.name, type: p.type, dataUrl: p.dataUrl });
+          $("photoCountPill") && ($("photoCountPill").textContent = "Фото: " + pendingPhotos.length);
+        }catch(e){
+          console.warn("photo compress fail", e);
+        }
+      }
+
+      if(files.length > PHOTO_MAX_COUNT){
+        alert("Лимит: максимум " + PHOTO_MAX_COUNT + " фото на обращение.");
+      }
+    });
+  }
+
+  function readFileAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onerror = () => reject(new Error("FileReader error"));
+      r.onload = () => resolve(String(r.result || ""));
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function compressImageFileToDataUrl(file, maxSide=1280, quality=0.78){
+    const src = await readFileAsDataUrl(file);
+
+    // если это не image/* — пропускаем
+    if(!String(file.type || "").startsWith("image/")){
+      return { dataUrl: src, type: file.type || "application/octet-stream" };
+    }
+
+    // грузим в Image
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error("Image load error"));
+      im.src = src;
+    });
+
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+
+    // считаем масштаб
+    let nw = w, nh = h;
+    if(Math.max(w,h) > maxSide){
+      const k = maxSide / Math.max(w,h);
+      nw = Math.round(w * k);
+      nh = Math.round(h * k);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, nw, nh);
+
+    // сохраняем как JPEG (обычно компактнее)
+    const outType = "image/jpeg";
+    const dataUrl = canvas.toDataURL(outType, quality);
+    return { dataUrl, type: outType };
+  }
+
+  function photosHtmlForItem(item, contextLabel){
+    const photos = Array.isArray(item?.photos) ? item.photos : [];
+    if(!photos.length) return `<div class="hint" style="margin-top:8px;">Фото не прикреплено.</div>`;
+
+    const thumbs = photos.map((p, idx) => `
+      <div class="thumb" onclick="openPhotoModalById(${item.id}, ${idx}, '${escapeHtml(contextLabel)}')">
+        <img src="${p.dataUrl}" alt="Фото ${idx+1}">
+      </div>
+    `).join("");
+
+    return `
+      <div class="hint" style="margin-top:8px;"><b>Фото:</b></div>
+      <div class="thumbs">${thumbs}</div>
+    `;
+  }
+
+  function openPhotoModal(list, index, title, sub){
+    photoModalList = Array.isArray(list) ? list : [];
+    photoModalIndex = Math.min(Math.max(Number(index)||0,0), Math.max(photoModalList.length-1,0));
+    $("photoModalTitle").textContent = title || "Фото";
+    $("photoModalSub").textContent = sub || "";
+    $("photoModal")?.classList.add("on");
+    $("photoModal")?.setAttribute("aria-hidden","false");
+    renderPhotoModal();
+  }
+
+  function openPhotoModalById(reportId, index, context){
+    const item = reports.find(r => r.id === reportId);
+    if(!item || !Array.isArray(item.photos) || !item.photos.length){
+      alert("Фото не найдено.");
+      return;
+    }
+    const title = `Фото обращения #${item.id}`;
+    const sub = context || "";
+    openPhotoModal(item.photos, index, title, sub);
+  }
+
+  function closePhotoModal(){
+    $("photoModal")?.classList.remove("on");
+    $("photoModal")?.setAttribute("aria-hidden","true");
+    photoModalList = [];
+    photoModalIndex = 0;
+  }
+
+  function renderPhotoModal(){
+    const img = $("photoModalImg");
+    const ctr = $("photoModalCounter");
+    if(!img || !ctr) return;
+
+    if(!photoModalList.length){
+      img.src = "";
+      ctr.textContent = "0 / 0";
+      return;
+    }
+    const p = photoModalList[photoModalIndex];
+    img.src = p.dataUrl;
+    ctr.textContent = `${photoModalIndex+1} / ${photoModalList.length}`;
+  }
+
+  function prevPhoto(){
+    if(!photoModalList.length) return;
+    photoModalIndex = (photoModalIndex - 1 + photoModalList.length) % photoModalList.length;
+    renderPhotoModal();
+  }
+  function nextPhoto(){
+    if(!photoModalList.length) return;
+    photoModalIndex = (photoModalIndex + 1) % photoModalList.length;
+    renderPhotoModal();
+  }
+
   /* ====== МЕСТО: режимы ====== */
   function useMapPlace(){
     placeMode = "map";
@@ -1136,7 +1370,7 @@
     closePickMap();
   }
 
-  function submitReport(){
+  async function submitReport(){
     if(!session || session.role !== "citizen"){
       alert("Подать обращение может только «Гражданин».");
       return;
@@ -1170,6 +1404,10 @@
     }
 
     const id = makeUniqueId();
+
+    // NEW: сохраняем фото
+    const photos = Array.isArray(pendingPhotos) ? pendingPhotos.slice(0, PHOTO_MAX_COUNT) : [];
+
     const item = {
       id,
       cat,
@@ -1180,28 +1418,44 @@
       citizen: session.name,
       createdAt: Date.now(),
       comments: [],
-      lat, lng
+      lat, lng,
+      photos
     };
 
     reports.unshift(item);
-    saveAll();
+
+    // пробуем сохранить, если переполнено — откатим добавление
+    try{
+      saveAll();
+    }catch(e){
+      reports.shift();
+      alert("Не удалось сохранить обращение: память переполнена.");
+      return;
+    }
+
     buildRegionFilter();
     renderAll();
 
     const res = $("result");
     if(res){
-      res.innerHTML = `✅ Обращение <b>#${id}</b> зарегистрировано. Регион: <b>${escapeHtml(item.region)}</b>. Статус: ${statusBadge(0)}`;
+      res.innerHTML = `✅ Обращение <b>#${id}</b> зарегистрировано. Регион: <b>${escapeHtml(item.region)}</b>. Статус: ${statusBadge(0)}<br>${photos.length ? `📷 Фото: <b>${photos.length}</b>` : ``}`;
     }
 
     $("trackId") && ($("trackId").value = id);
 
+    // очистка формы
     $("desc") && ($("desc").value = "");
     $("loc") && ($("loc").value = "");
     $("type") && ($("type").value = "auto");
     $("region") && ($("region").value = "");
     pickedLatLng = null;
     $("pickedCoordPill").textContent = "Точка не выбрана";
-    // оставим текущий режим как есть
+
+    // очистка фото
+    pendingPhotos = [];
+    $("photoCountPill") && ($("photoCountPill").textContent = "Фото: 0");
+    const inp = $("photos");
+    if(inp) inp.value = "";
   }
 
   function track(){
@@ -1222,6 +1476,9 @@
       Локация: <b>${escapeHtml(item.loc)}</b><br>
       Заявитель: <b>${escapeHtml(item.citizen)}</b><br>
       Статус: ${statusBadge(item.statusIndex)}<br>
+
+      ${photosHtmlForItem(item, "Трекинг")}
+
       ${lastComment ? `
         <div class="panel">
           <b>Комментарий оператора:</b><br>
@@ -1388,6 +1645,21 @@
         { className:"mytip", direction:"top", offset:[0,-10], sticky:true }
       );
 
+      const photos = Array.isArray(r.photos) ? r.photos : [];
+      const photoBlock = photos.length ? `
+        <div style="margin-top:10px;">
+          <div style="font-weight:900; margin-bottom:6px;">Фото (${photos.length})</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            ${photos.map((p, idx)=>`
+              <div style="width:88px;height:66px;border-radius:12px;overflow:hidden;border:1px solid var(--line);cursor:pointer;"
+                   onclick="openPhotoModalById(${r.id}, ${idx}, 'Реестр · карта')">
+                <img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Фото">
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      ` : `<div style="margin-top:10px; font-size:12px; color:var(--muted);">Фото: нет</div>`;
+
       m.bindPopup(`
         <div style="font-weight:900;margin-bottom:6px;">#${r.id} · ${catName(r.cat)}</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">${new Date(r.createdAt).toLocaleString("ru-RU")}</div>
@@ -1395,6 +1667,7 @@
         <div style="margin-bottom:6px;"><b>Регион:</b> ${escapeHtml(r.region)}</div>
         <div style="margin-bottom:6px;"><b>Локация:</b> ${escapeHtml(r.loc)}</div>
         <div style="font-size:12px;line-height:1.35;">${escapeHtml(r.desc)}</div>
+        ${photoBlock}
       `);
     });
 
@@ -1446,6 +1719,8 @@
 
               <div style="margin-top:10px;">${escapeHtml(r.desc)}</div>
 
+              ${photosHtmlForItem(r, "Мои обращения")}
+
               ${last ? `
                 <div class="panel">
                   <b>Комментарий оператора:</b>
@@ -1473,6 +1748,11 @@
             `<option value="${i}" ${i===r.statusIndex ? "selected" : ""}>${s}</option>`
           ).join("");
 
+          const photoCount = Array.isArray(r.photos) ? r.photos.length : 0;
+          const photoBtn = photoCount
+            ? `<button class="mini-btn" onclick="openPhotoModalById(${r.id}, 0, 'Реестр · таблица')">Фото (${photoCount})</button>`
+            : `<button class="mini-btn" onclick="alert('Фото не прикреплено.')">Фото (0)</button>`;
+
           return `
             <tr>
               <td>
@@ -1490,7 +1770,11 @@
                 <div style="margin-top:8px;">${statusBadge(r.statusIndex)}</div>
               </td>
               <td>
-                <button class="mini-btn" onclick="toggleCommentPanel(${r.id})">Комментарий${last ? " •" : ""}</button>
+                <div class="row">
+                  ${photoBtn}
+                  <button class="mini-btn" onclick="toggleCommentPanel(${r.id})">Комментарий${last ? " •" : ""}</button>
+                </div>
+
                 ${openCommentId === r.id ? `
                   <div class="panel">
                     <textarea id="cmt-${r.id}" placeholder="Комментарий для гражданина..."></textarea>
