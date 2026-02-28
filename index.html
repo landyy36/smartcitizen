@@ -97,7 +97,6 @@
       background: rgba(255,255,255,0.14);
       display:grid;place-items:center;
       font-weight:900;
-      letter-spacing:.5px;
     }
     .top-right{ display:flex; align-items:center; gap:10px; font-size:13px; opacity:.95; }
     .chip{
@@ -131,24 +130,7 @@
     }
     .navitem:hover{ background: var(--nav2); }
     .navitem.active{ background: rgba(30,136,229,0.18); border: 1px solid rgba(30,136,229,0.35); }
-
-    /* Монохромные иконки (как ChatGPT — чистые, без цвета) */
-    .navicon{
-      width:22px; height:22px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      opacity:.92;
-      flex: 0 0 22px;
-    }
-    .navicon svg{
-      width:20px; height:20px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
+    .navicon{ width:24px; text-align:center; }
 
     .sidebar-actions{ padding:12px; }
     .sidebar-bottom{ margin-top:8px; padding:12px; border-top: 1px solid rgba(217,226,236,0.12); }
@@ -486,66 +468,18 @@
     <aside class="sidebar">
       <div class="navtitle">Навигация</div>
 
-      <div class="navitem active" id="nav-auth" onclick="go('auth')">
-        <div class="navicon" aria-hidden="true">
-          <!-- key -->
-          <svg viewBox="0 0 24 24"><path d="M7 14a5 5 0 1 1 3.6-8.5"/><path d="M11 11l10 0"/><path d="M17 11v3"/><path d="M20 11v2"/></svg>
-        </div>
-        <div>Вход / Регистрация</div>
-      </div>
-
-      <div class="navitem" id="nav-dashboard" onclick="go('dashboard')">
-        <div class="navicon" aria-hidden="true">
-          <!-- home -->
-          <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
-        </div>
-        <div>Главная</div>
-      </div>
-
-      <div class="navitem" id="nav-report" onclick="go('report')">
-        <div class="navicon" aria-hidden="true">
-          <!-- plus circle -->
-          <svg viewBox="0 0 24 24"><path d="M12 8v8"/><path d="M8 12h8"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
-        </div>
-        <div>Подать обращение</div>
-      </div>
-
-      <div class="navitem" id="nav-my" onclick="go('my')">
-        <div class="navicon" aria-hidden="true">
-          <!-- folder -->
-          <svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        </div>
-        <div>Мои обращения</div>
-      </div>
-
-      <div class="navitem" id="nav-track" onclick="go('track')">
-        <div class="navicon" aria-hidden="true">
-          <!-- search -->
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
-        </div>
-        <div>Трекинг по номеру</div>
-      </div>
+      <div class="navitem active" id="nav-auth" onclick="go('auth')"><div class="navicon">🔐</div><div>Вход / Регистрация</div></div>
+      <div class="navitem" id="nav-dashboard" onclick="go('dashboard')"><div class="navicon">🏠</div><div>Главная</div></div>
+      <div class="navitem" id="nav-report" onclick="go('report')"><div class="navicon">➕</div><div>Подать обращение</div></div>
+      <div class="navitem" id="nav-my" onclick="go('my')"><div class="navicon">📂</div><div>Мои обращения</div></div>
+      <div class="navitem" id="nav-track" onclick="go('track')"><div class="navicon">🔎</div><div>Трекинг по номеру</div></div>
 
       <div class="navtitle" style="margin-top:8px;">Для сотрудников</div>
+      <div class="navitem" id="nav-admin" onclick="go('admin')"><div class="navicon">🏛️</div><div>Реестр обращений</div></div>
 
-      <div class="navitem" id="nav-admin" onclick="go('admin')">
-        <div class="navicon" aria-hidden="true">
-          <!-- building -->
-          <svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-6h6v6"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>
-        </div>
-        <div>Реестр обращений</div>
-      </div>
+      <div class="navitem" id="nav-help" onclick="go('help')"><div class="navicon">❓</div><div>Помощь</div></div>
 
-      <div class="navitem" id="nav-help" onclick="go('help')">
-        <div class="navicon" aria-hidden="true">
-          <!-- help circle -->
-          <svg viewBox="0 0 24 24"><path d="M12 17h.01"/><path d="M9.1 9a3 3 0 1 1 4.9 2.3c-.9.6-1.5 1.1-1.5 2.2v.5"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
-        </div>
-        <div>Помощь</div>
-      </div>
-
-      <!-- FIX: кнопка выхода показывается только когда есть сессия -->
-      <div class="sidebar-actions hide" id="logoutWrap">
+      <div class="sidebar-actions">
         <button class="btn-danger" onclick="logout()">Выйти из аккаунта</button>
       </div>
 
@@ -611,7 +545,7 @@
             </div>
           </section>
 
-          <!-- REPORT -->
+          <!-- REPORT (FIXED: убрал дубли, оставил 2 кнопки) -->
           <section class="card hide" id="tab-report">
             <h2>Подать обращение</h2>
             <div class="muted">Опишите проблему и укажите место. Можно выбрать точку <b>на карте</b>.</div>
@@ -629,7 +563,7 @@
               <option value="other">Другое</option>
             </select>
 
-            <!-- ДВЕ КНОПКИ -->
+            <!-- ДВЕ КНОПКИ (как просил): Выбрать на карте / Ввести вручную -->
             <div class="row" style="margin-top:14px;">
               <button class="btn2" onclick="useMapPlace()">Выбрать на карте</button>
               <button class="btn2" onclick="useManualPlace()">Ввести вручную</button>
@@ -829,7 +763,7 @@
           </div>
         </div>
 
-        <div class="hint">Маркер — белый круг с цветом категории.</div>
+        <div class="hint">Маркер теперь не “капля”, а белый круг с цветом категории — как ты просил.</div>
       </div>
     </div>
   </div>
@@ -865,8 +799,6 @@
   restoreSession();
   hookAuthRoleUI();
   buildRegionFilter();
-  // FIX: синхронизируем видимость кнопки выхода и пунктов меню сразу
-  syncSessionDependentUI();
   renderAll();
   go(session ? "dashboard" : "auth");
 
@@ -939,7 +871,6 @@
     if(session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     else localStorage.removeItem(SESSION_KEY);
     updateSessionUI();
-    syncSessionDependentUI(); // FIX: прячем/показываем кнопку выхода и пункты
   }
 
   function restoreSession(){
@@ -972,17 +903,6 @@
       chip && (chip.textContent = "Гость");
       info && (info.textContent = "Статус: не авторизован");
     }
-  }
-
-  // FIX: кнопка "Выйти" только при входе + скрытие разделов по роли
-  function syncSessionDependentUI(){
-    $("logoutWrap")?.classList.toggle("hide", !session);
-
-    const isCitizen = session?.role === "citizen";
-    const isGov = session?.role === "gov";
-    $("nav-report")?.classList.toggle("hide", !isCitizen);
-    $("nav-my")?.classList.toggle("hide", !isCitizen);
-    $("nav-admin")?.classList.toggle("hide", !isGov);
   }
 
   function setActiveNav(key){
@@ -1024,7 +944,12 @@
     animateTab(tab);
 
     setActiveNav(name);
-    syncSessionDependentUI();
+
+    const isCitizen = session?.role === "citizen";
+    const isGov = session?.role === "gov";
+    $("nav-report")?.classList.toggle("hide", !isCitizen);
+    $("nav-my")?.classList.toggle("hide", !isCitizen);
+    $("nav-admin")?.classList.toggle("hide", !isGov);
 
     if(name === "admin"){
       if(adminView === "map") initAdminMapOnce();
@@ -1156,23 +1081,39 @@
   function makeDotIcon(cat){
     const color = getCssVarColorForCat(cat);
     const html = `<div class="dot-marker"><div class="dot" style="background:${color}"></div></div>`;
-    return L.divIcon({ className:"", html, iconSize:[20,20], iconAnchor:[10,10] });
+    return L.divIcon({
+      className: "",
+      html,
+      iconSize: [20,20],
+      iconAnchor: [10,10]
+    });
   }
 
   function initPickMapOnce(){
     if(pickMap) return;
-    if(typeof L === "undefined"){ setTimeout(initPickMapOnce, 60); return; }
+
+    if(typeof L === "undefined"){
+      setTimeout(initPickMapOnce, 60);
+      return;
+    }
 
     pickMap = L.map("pickMap", { zoomControl:true }).setView([51.169, 71.449], 11);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(pickMap);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(pickMap);
 
     pickMap.on("click", (e) => {
       pickedLatLng = e.latlng;
+
       const cat = getChosenCategoryForMarker();
       const icon = makeDotIcon(cat);
 
-      if(!pickMarker) pickMarker = L.marker(e.latlng, { icon }).addTo(pickMap);
-      else { pickMarker.setLatLng(e.latlng); pickMarker.setIcon(icon); }
+      if(!pickMarker){
+        pickMarker = L.marker(e.latlng, { icon }).addTo(pickMap);
+      }else{
+        pickMarker.setLatLng(e.latlng);
+        pickMarker.setIcon(icon);
+      }
 
       $("pickCoord").textContent = `Координаты: ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
       $("pickCatPill").textContent = "Категория: " + catName(cat);
@@ -1187,13 +1128,19 @@
   }
 
   function confirmPick(){
-    if(!pickedLatLng){ alert("Сначала выберите точку на карте."); return; }
+    if(!pickedLatLng){
+      alert("Сначала выберите точку на карте.");
+      return;
+    }
     $("pickedCoordPill").textContent = `Координаты: ${pickedLatLng.lat.toFixed(5)}, ${pickedLatLng.lng.toFixed(5)}`;
     closePickMap();
   }
 
   function submitReport(){
-    if(!session || session.role !== "citizen"){ alert("Подать обращение может только «Гражданин»."); return; }
+    if(!session || session.role !== "citizen"){
+      alert("Подать обращение может только «Гражданин».");
+      return;
+    }
 
     const desc = ($("desc")?.value || "").trim();
     const type = $("type")?.value || "auto";
@@ -1202,11 +1149,18 @@
     const cat = (type === "auto") ? aiClassify(desc) : type;
     $("aiTag") && ($("aiTag").textContent = "Классификация: " + catName(cat));
 
-    let region = "", loc = "", lat = null, lng = null;
+    let region = "";
+    let loc = "";
+    let lat = null;
+    let lng = null;
 
     if(placeMode === "map"){
-      if(!pickedLatLng){ alert("Выберите точку на карте (кнопка «Открыть карту»)."); return; }
-      lat = pickedLatLng.lat; lng = pickedLatLng.lng;
+      if(!pickedLatLng){
+        alert("Выберите точку на карте (кнопка «Открыть карту»).");
+        return;
+      }
+      lat = pickedLatLng.lat;
+      lng = pickedLatLng.lng;
       region = "По карте";
       loc = `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     }else{
@@ -1216,8 +1170,9 @@
     }
 
     const id = makeUniqueId();
-    reports.unshift({
-      id, cat,
+    const item = {
+      id,
+      cat,
       region: region || "—",
       loc: (loc || "—"),
       desc,
@@ -1226,14 +1181,17 @@
       createdAt: Date.now(),
       comments: [],
       lat, lng
-    });
+    };
 
+    reports.unshift(item);
     saveAll();
     buildRegionFilter();
     renderAll();
 
     const res = $("result");
-    if(res) res.innerHTML = `✅ Обращение <b>#${id}</b> зарегистрировано. Регион: <b>${escapeHtml(region || "—")}</b>. Статус: ${statusBadge(0)}`;
+    if(res){
+      res.innerHTML = `✅ Обращение <b>#${id}</b> зарегистрировано. Регион: <b>${escapeHtml(item.region)}</b>. Статус: ${statusBadge(0)}`;
+    }
 
     $("trackId") && ($("trackId").value = id);
 
@@ -1243,6 +1201,7 @@
     $("region") && ($("region").value = "");
     pickedLatLng = null;
     $("pickedCoordPill").textContent = "Точка не выбрана";
+    // оставим текущий режим как есть
   }
 
   function track(){
@@ -1286,7 +1245,10 @@
   }
 
   function setStatus(id, value){
-    if(!session || session.role !== "gov"){ alert("Менять статус может только роль «Правительство»."); return; }
+    if(!session || session.role !== "gov"){
+      alert("Менять статус может только роль «Правительство».");
+      return;
+    }
     const item = reports.find(r=>r.id===id);
     if(!item) return;
     const idx = Number(value);
@@ -1306,7 +1268,10 @@
   }
 
   function addComment(id){
-    if(!session || session.role !== "gov"){ alert("Комментировать может только роль «Правительство»."); return; }
+    if(!session || session.role !== "gov"){
+      alert("Комментировать может только роль «Правительство».");
+      return;
+    }
     const ta = document.getElementById("cmt-"+id);
     if(!ta) return;
 
@@ -1325,10 +1290,16 @@
   }
 
   function updateRegion(id){
-    if(!session || session.role !== "citizen"){ alert("Менять регион может только гражданин."); return; }
+    if(!session || session.role !== "citizen"){
+      alert("Менять регион может только гражданин.");
+      return;
+    }
     const item = reports.find(r=>r.id===id);
     if(!item) return;
-    if(item.citizen !== session.name){ alert("Можно менять регион только у своих обращений."); return; }
+    if(item.citizen !== session.name){
+      alert("Можно менять регион только у своих обращений.");
+      return;
+    }
     const sel = document.getElementById("myRegion-"+id);
     if(!sel) return;
     const region = (sel.value || "").trim();
@@ -1370,10 +1341,17 @@
 
   function initAdminMapOnce(){
     if(adminMap) return;
-    if(typeof L === "undefined"){ setTimeout(initAdminMapOnce, 60); return; }
+
+    if(typeof L === "undefined"){
+      setTimeout(initAdminMapOnce, 60);
+      return;
+    }
 
     adminMap = L.map("adminMap", { zoomControl:true }).setView([48.0, 67.0], 5);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(adminMap);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(adminMap);
+
     adminLayer = L.layerGroup().addTo(adminMap);
   }
 
