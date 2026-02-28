@@ -477,14 +477,14 @@
      *  SUPABASE SETTINGS
      ***********************/
     // ✅ ВАЖНО: это Project URL, НЕ dashboard
-   const SUPABASE_URL = "https://ehuxkgejxihwndszpbol.supabase.co";
+   const SUPABASE_URL = "https://ehuxkgejxihwndszpbol.sb.co";
    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."; 
 
     if(!window.supabase){
       alert("Supabase библиотека не загрузилась. Проверь интернет/блокировщики.");
       throw new Error("Supabase JS not loaded");
     }
-   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const THEME_KEY   = "smartCitizenTheme_v1";
     const SESSION_KEY = "smartCitizenSession_v1";
@@ -684,7 +684,7 @@
 
     async function loadAll(){
       {
-        const { data, error } = await supabase.from("reports_sc").select("*").order("created_at", { ascending: false });
+        const { data, error } = await sb.from("reports_sc").select("*").order("created_at", { ascending: false });
         if(error) return safeAlertSupabase(error, "load reports");
         reports = (data || []).map(r => ({
           id: r.rid,
@@ -701,14 +701,14 @@
         }));
       }
       {
-        const { data, error } = await supabase.from("users_sc").select("*").order("created_at", { ascending: false });
+        const { data, error } = await sb.from("users_sc").select("*").order("created_at", { ascending: false });
         if(error) return safeAlertSupabase(error, "load users");
         users = (data || []).map(u => ({ name: u.name, role: u.role, createdAt: u.created_at ? new Date(u.created_at).getTime() : Date.now() }));
       }
     }
 
     async function upsertUser(name, role){
-      const { error } = await supabase.from("users_sc").upsert({ name, role });
+      const { error } = await sb.from("users_sc").upsert({ name, role });
       if(error) return safeAlertSupabase(error, "upsert user");
     }
 
@@ -725,32 +725,32 @@
         lng: item.lng ?? null,
         comments: item.comments ?? []
       };
-      const { error } = await supabase.from("reports_sc").insert(payload);
+      const { error } = await sb.from("reports_sc").insert(payload);
       if(error) return safeAlertSupabase(error, "insert report");
     }
 
     async function updateReportStatus(rid, statusIndex){
-      const { error } = await supabase.from("reports_sc").update({ status_index: statusIndex }).eq("rid", rid);
+      const { error } = await sb.from("reports_sc").update({ status_index: statusIndex }).eq("rid", rid);
       if(error) return safeAlertSupabase(error, "update status");
     }
 
     async function updateReportRegion(rid, citizen, region){
-      const { error } = await supabase.from("reports_sc").update({ region }).eq("rid", rid).eq("citizen", citizen);
+      const { error } = await sb.from("reports_sc").update({ region }).eq("rid", rid).eq("citizen", citizen);
       if(error) return safeAlertSupabase(error, "update region");
     }
 
     async function addReportComment(rid, commentObj){
-      const { data, error } = await supabase.from("reports_sc").select("comments").eq("rid", rid).maybeSingle();
+      const { data, error } = await sb.from("reports_sc").select("comments").eq("rid", rid).maybeSingle();
       if(error) return safeAlertSupabase(error, "load comments");
       const arr = Array.isArray(data?.comments) ? data.comments : [];
       arr.push(commentObj);
-      const upd = await supabase.from("reports_sc").update({ comments: arr }).eq("rid", rid);
+      const upd = await sb.from("reports_sc").update({ comments: arr }).eq("rid", rid);
       if(upd.error) return safeAlertSupabase(upd.error, "save comment");
     }
 
     function subscribeRealtime(){
       if(rtChannel) return;
-      rtChannel = supabase.channel("sc-realtime")
+      rtChannel = sb.channel("sc-realtime")
         .on("postgres_changes", { event: "*", schema: "public", table: "reports_sc" }, async () => {
           await loadAll(); buildRegionFilter(); renderAll();
         })
@@ -1193,4 +1193,3 @@
   </script>
 </body>
 </html>
-
